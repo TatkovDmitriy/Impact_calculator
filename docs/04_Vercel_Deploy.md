@@ -1,67 +1,125 @@
 # 04 — Vercel Deploy
 
-## Подключение
+## Статус (2026-05-07)
 
-1. Залогиниться в https://vercel.com (через GitHub)
-2. **Add New → Project** → выбрать репо `TatkovDmitriy/Impact_calculator`
-3. Framework preset: **Next.js** (определится автоматически)
-4. Root directory: оставить `./` (если код в корне репо)
-5. Build & Output: дефолты Next.js
-6. Перейти в **Environment Variables** и добавить все из [03_Firebase.md](03_Firebase.md)
-7. Deploy
-
-## Environment Variables
-
-Скопировать **все** ключи из `.env.local` в Vercel: **Project → Settings → Environment Variables**.
-
-| Переменная | Environments |
+| Параметр | Значение |
 |---|---|
-| `NEXT_PUBLIC_FIREBASE_*` (6 шт) | Production, Preview, Development |
-| `FIREBASE_ADMIN_*` (2 шт) | Production, Preview |
-| `GOOGLE_SHEETS_*` (3 шт) | Production, Preview |
+| Репо | `TatkovDmitriy/Impact_calculator` |
+| Приложение | `/impact_calculator` (Next.js 16.2.5, Tailwind v4) |
+| Vercel project | `impact-calculator-beryl` |
+| Production URL | **https://impact-calculator-beryl.vercel.app** |
+| Service Account | `firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com` |
+| Root Directory | `impact_calculator` (критично — см. ниже) |
 
-> ⚠️ `GOOGLE_SHEETS_PRIVATE_KEY` содержит `\n` — в Vercel UI вставлять как есть (с реальными переводами строк), НЕ экранировать.
+## Known Issues (открытые)
 
-## Firebase Authorized Domains
+| ID | Severity | Описание | Статус |
+|---|---|---|---|
+| BUG-03 | P1 | Логин возвращает "Ошибка авторизации" — возможно FIREBASE_ADMIN_PRIVATE_KEY в Vercel с лишними кавычками | Диагностируется |
 
-После первого деплоя:
+---
 
-1. Узнать Vercel URL (например, `impact-calculator.vercel.app`)
-2. Firebase Console → **Authentication → Settings → Authorized domains** → Add domain
-3. Добавить:
-   - `impact-calculator.vercel.app`
-   - `impact-calculator-*-tatkovdmitriy.vercel.app` (preview-деплои — добавить wildcard или вручную после первого preview)
+## ⚠️ Критическая настройка — Root Directory
 
-Без этого Firebase Auth не работает на проде.
+Приложение находится в **подпапке** репозитория, не в корне.
+При подключении к Vercel **обязательно** указывать:
 
-## Google Sheets — доступ
+```
+Root Directory: impact_calculator
+```
 
-1. Создать Service Account в Google Cloud Console (или переиспользовать существующий)
-2. Скачать JSON ключ → распаковать в env vars (`GOOGLE_SHEETS_CLIENT_EMAIL`, `GOOGLE_SHEETS_PRIVATE_KEY`)
-3. Открыть таблицу https://docs.google.com/spreadsheets/d/103C2StHfJg9LPr9QFB4xmwkqLc_6pPoZT7_CKo3DuwE
-4. **Share** → добавить email Service Account как **Viewer**
+Если не указать — Vercel деплоит корень как статику (build = 18ms, страниц нет).
+**Исправить постфактум через Settings нельзя — только пересоздать проект.**
 
-## Кастомный домен (опционально)
+---
 
-После стабилизации MVP:
-- Купить домен или использовать поддомен от существующего
-- Vercel → **Project → Settings → Domains** → Add
-- Прописать DNS-записи по инструкции Vercel
-- Добавить новый домен в Firebase Authorized Domains
+## Первый деплой (пошагово)
+
+1. Перейти на https://vercel.com → **Add New → Project**
+2. Выбрать репо `TatkovDmitriy/Impact_calculator` → **Import**
+3. **До нажатия Deploy** раскрыть секцию **"Configure Project"**
+4. Установить **Root Directory: `impact_calculator`**
+5. Vercel автоматически определит Framework Preset: **Next.js**
+6. Build Command и Output Directory — оставить дефолты
+7. Перейти в **Environment Variables** → добавить все 11 переменных (таблица ниже)
+8. Нажать **Deploy**
+9. Убедиться что build time **> 60 секунд** (не 18ms)
+
+---
+
+## Environment Variables (все 11)
+
+Значения из `impact_calculator/.env.local`.
+
+| Переменная | Тип |
+|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Публичная |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Публичная |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Публичная |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Публичная |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Публичная |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Публичная |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Серверная |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Серверная (секрет) |
+| `GOOGLE_SHEETS_CLIENT_EMAIL` | Серверная |
+| `GOOGLE_SHEETS_PRIVATE_KEY` | Серверная (секрет) |
+| `GOOGLE_SHEETS_SPREADSHEET_ID` | Серверная |
+
+### Про FIREBASE_ADMIN_PRIVATE_KEY в Vercel
+
+Значение должно начинаться с `-----BEGIN PRIVATE KEY-----` **без кавычек**.
+Если при Import .env кавычки попали в значение — отредактировать вручную.
+В коде делается `.replace(/\\n/g, '\n')` — `\n` хранятся как escape-последовательности.
+
+---
+
+## После деплоя — чек-лист
+
+### Firebase Authorized Domains
+
+1. Firebase Console → **Authentication → Settings → Authorized domains**
+2. Добавить Production URL: `impact-calculator-beryl.vercel.app` ✅
+
+### Google Sheets — доступ для Service Account
+
+1. Открыть таблицу `103C2StHfJg9LPr9QFB4xmwkqLc_6pPoZT7_CKo3DuwE`
+2. **Поделиться** → `firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com` → Просматривающий ✅
+
+### Проверка после деплоя
+
+- [ ] Build time > 60 сек, лог содержит `Route (app): /login /dashboard ...`
+- [ ] `/login` открывается с брендингом ЛП (#2F3738 / #FDC300)
+- [ ] Логин с реальным email → редирект на `/dashboard`
+- [ ] `/dev-check` — оба чека зелёные (Firebase Auth + Baseline API)
+- [ ] F12 Console — нет ошибок
+
+---
 
 ## CI/CD
 
 - **main branch** → авто-деплой в Production
 - **любая другая ветка / PR** → Preview deploy с уникальным URL
-- Build падает на TypeScript ошибках (strict mode) и lint-ошибках — это by design
+- Build падает на TypeScript ошибках (strict mode) — by design
+- Environment Variables применяются к соответствующим environments автоматически
 
-## Чек-лист первого деплоя
+---
 
-- [ ] Репо подключён к Vercel
-- [ ] Все env vars добавлены (3 environment'а)
-- [ ] Build прошёл успешно
-- [ ] Vercel URL добавлен в Firebase Authorized Domains
-- [ ] Service Account email добавлен в Sheets как Viewer
-- [ ] Логин email/password работает
-- [ ] Запрос к `/api/sheets` возвращает данные
-- [ ] Сохранение сценария → видно в Firestore Console
+## Plan B (если Root Directory снова не применился)
+
+Создать `vercel.json` в **корне репозитория** (не в impact_calculator/):
+
+```json
+{
+  "buildCommand": "cd impact_calculator && npm install && npm run build",
+  "outputDirectory": "impact_calculator/.next",
+  "installCommand": "cd impact_calculator && npm install"
+}
+```
+
+---
+
+## Кастомный домен (опционально, после MVP)
+
+1. Vercel → Project → Settings → Domains → Add domain
+2. Прописать DNS по инструкции Vercel
+3. Добавить домен в Firebase Console → Authentication → Authorized domains

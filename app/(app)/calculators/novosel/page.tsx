@@ -15,6 +15,7 @@ import { ScenarioAPanel } from './ScenarioAPanel';
 import { ScenarioBPanel } from './ScenarioBPanel';
 import { ScenarioCPanel } from './ScenarioCPanel';
 import { SaveModal } from './SaveModal';
+import { PlannerTab } from './PlannerTab';
 import { cn } from '@/lib/utils';
 
 const INCREMENTALITY_OPTIONS = [
@@ -60,6 +61,7 @@ function SliderField({
 }
 
 export default function NovoselPage() {
+  const [outerTab, setOuterTab] = useState<'analysis' | 'planner'>('analysis');
   const [inputs, setInputs] = useState<NovoselInputs>(NOVOSEL_PRESETS[0].inputs as NovoselInputs);
   const [activePreset, setActivePreset] = useState<0 | 1 | 2>(0);
   const [activeTab, setActiveTab] = useState('a');
@@ -130,7 +132,34 @@ export default function NovoselPage() {
           </div>
         </div>
 
-        <div className="flex gap-5 lg:flex-row flex-col">
+        {/* Outer tab switcher: Анализ | Планировщик */}
+        <div className="mb-5 flex gap-1 border-b border-lp-border pb-0">
+          {([
+            { id: 'analysis', label: 'Анализ A/B/C' },
+            { id: 'planner', label: 'Планировщик' },
+          ] as const).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setOuterTab(tab.id)}
+              className={cn(
+                'rounded-t-lg border border-b-0 px-4 py-2 text-sm font-medium transition-colors',
+                outerTab === tab.id
+                  ? 'border-lp-border bg-white text-lp-dark'
+                  : 'border-transparent text-lp-text-muted hover:text-lp-dark'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Planner panel — always mounted to preserve state */}
+        <div className={outerTab !== 'planner' ? 'hidden' : ''}>
+          <PlannerTab />
+        </div>
+
+        {/* Analysis panel */}
+        <div className={cn('flex gap-5 lg:flex-row flex-col', outerTab !== 'analysis' ? 'hidden' : '')}>
           {/* Left: Inputs */}
           <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
             {/* Preset buttons */}

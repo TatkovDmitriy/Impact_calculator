@@ -19,5 +19,5 @@ export function Logo({ className, width = 120, height = 32, linkTo = '/dashboard
       priority
     />
   );
-  return linkTo ? <Link href={linkTo}>{img}</Link> : img;
+  return linkTo ? <Link href={linkTo} className="block leading-none">{img}</Link> : img;
 }

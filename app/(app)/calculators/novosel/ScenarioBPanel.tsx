@@ -55,9 +55,12 @@ export function ScenarioBPanel({ result }: Props) {
 
       {/* Grouped bar chart */}
       <div className="rounded-xl border border-lp-border bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-xs font-semibold text-lp-text-muted uppercase tracking-wide">
-          Сравнение категорий, млн ₽
-        </h3>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3 className="text-xs font-semibold text-lp-text-muted uppercase tracking-wide">
+            Сравнение категорий, млн ₽
+          </h3>
+          <span className="text-xs text-lp-text-muted">Всегда все 3 категории</span>
+        </div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={barData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />

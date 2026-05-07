@@ -36,7 +36,9 @@
 - Vitest для юнит-тестов формул
 
 КРИТИЧЕСКИЕ ОТЛИЧИЯ Next.js 16 ОТ Next.js 15
-1. middleware.ts переименован в proxy.ts, экспорт — функция proxy (не middleware)
+1. middleware.ts переименован в proxy.ts, ОБЯЗАТЕЛЬНО default export:
+   export default function proxy(request: NextRequest) { ... }
+   Именованный export работает локально, НО Vercel Edge Runtime его не видит → auth не работает на проде!
    Документация: node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md
 2. next.config.ts требует serverExternalPackages: ['firebase-admin', '@google-cloud/firestore']
    без этого firebase-admin не работает с Turbopack
@@ -79,7 +81,16 @@ FIRESTORE СТРУКТУРА
 - НЕ коммитить .env.local, ключи Service Account, Firebase Admin private key.
 - Все секреты — через env vars в Vercel (все 11 переменных).
 - npm run build должен проходить локально перед пушем.
-- npx vitest run — все тесты зелёные перед пушем.
+- npx vitest run — все юнит-тесты зелёные перед пушем.
+- npm run test:e2e — e2e тесты только против production URL beryl (preview защищены Vercel Deployment Protection).
+
+RECHARTS v3 — ПОДВОДНЫЕ КАМНИ
+- Tooltip formatter: нельзя явно типизировать аргумент как number — ValueType включает undefined.
+  НЕПРАВИЛЬНО: formatter={(v: number) => [v.toLocaleString() + ' ₽']}
+  ПРАВИЛЬНО:   formatter={(v) => [Number(v).toLocaleString() + ' ₽']}
+- Per-bar цвета в <Bar>: использовать <Cell>, не <rect>.
+  import { Bar, Cell } from 'recharts';
+  <Bar dataKey="value">{data.map((e, i) => <Cell key={i} fill={e.fill} />)}</Bar>
 
 VERCEL DEPLOY
 - Авто-деплой при пуше в main.
@@ -156,13 +167,16 @@ Preview URL: [ссылка на Vercel]
 - Юнит-тесты на каждую formula (минимум: edge case 0, типичный кейс, большой кейс)
 - `plugin.ts` с Zod-схемой для валидации inputs и metadata для реестра калькуляторов
 
-## Известные подводные камни (lessons learned Phase 1–2)
+## Известные подводные камни (lessons learned Phase 1–3)
 
 | Проблема | Причина | Решение |
 |----------|---------|---------|
 | Vercel деплоит за 18ms | Root Directory не настроен | Settings → General → Root Directory: `impact_calculator` |
 | firebase-admin не работает | Нет serverExternalPackages | next.config.ts: `serverExternalPackages: ['firebase-admin', '@google-cloud/firestore']` |
 | Логин всегда 403 access_denied | Код читал `allowedEmails`, Firestore хранит `emails` | Всегда проверять имя поля при создании Firestore-документа |
-| proxy.ts vs middleware.ts | Next.js 16 переименовал convention | Файл: proxy.ts, функция: proxy — НЕ трогать |
+| proxy.ts на Vercel не защищает роуты | Named export вместо default export | `export default function proxy(...)` — обязателен default |
+| Playwright тестирует Vercel login вместо приложения | Preview URL защищён Vercel Deployment Protection | E2E только против `impact-calculator-beryl.vercel.app` |
+| TypeScript build error: Recharts formatter | `(v: number) =>` — TypeScript не принимает | `(v) => [Number(v).toLocaleString()]` без аннотации типа |
+| Per-bar цвета не применяются в BarChart | `<rect>` не Recharts-компонент | `<Cell fill={...} />` из пакета recharts |
 | PRIVATE_KEY в Vercel с кавычками | Import .env иногда не обрезает кавычки | Проверить вручную что значение начинается с `-----BEGIN` |
 | create-next-app в непустой папке | Отказывается запускаться | Временно переместить файлы, запустить, вернуть |

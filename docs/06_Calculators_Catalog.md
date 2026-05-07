@@ -39,20 +39,36 @@ export interface CompareVizSpec {
 
 ## Каталог (реализованные и в разработке)
 
-### C-09 — Новосел: программа лояльности (FIRST BUILT — P0)
+### C-09 — Новосел: программа лояльности ✅ РЕАЛИЗОВАН (Phase 3 завершена)
 
-> **Slug:** `novosel-loyalty-impact` | **Spec:** [calculators/C-09_novosel_loyalty.md](calculators/C-09_novosel_loyalty.md)
+> **Slug:** `novosel` | **URL:** `/calculators/novosel` | **Spec:** [calculators/C-09_novosel_loyalty.md](calculators/C-09_novosel_loyalty.md)
+
+**Статус:** Production — https://impact-calculator-beryl.vercel.app/calculators/novosel
 
 **Вопрос:** стоит ли дисконт до 85 000 руб. той выручки и маржи, которую приносят Новоселы? Три сценария:
-1. «Что если доля Новоселов вырастет?» — waterfall margin при росте доли с 14.7% до N%
+1. «Что если доля Новоселов вырастет?» — ROI дисконта, delta выручки, sensitivity по margin×share
 2. «Какой проектный мир выгоднее?» — Bathroom vs Kitchen vs Storage по ROI дисконта
-3. «Новосел vs Не Новосел — насколько лучше?» — аналитика premium-индексов
+3. «Новосел vs Не Новосел — насколько лучше?» — benchmark метрики и premium-индексы
 
-**Baseline (апр 2026):** Kitchen AOV Новосел +47%, конверсия +25.9пп, выручка/сделку в 3.5× выше.
+**Baseline (апр 2026, hardcoded):**
+- Kitchen: AOV Новосел 166 299 ₽ (+47% к не-новоселам), конверсия +25.9пп, дисконт 16 630 ₽
+- Bathroom: AOV 119 374 ₽, дисконт = кэп 10 000 ₽ (cap_hit)
+- Storage: AOV 74 180 ₽, дисконт 7 418 ₽
 
-**Inputs:** маржа проекта (%), дисконт (руб), горизонт (мес), категория, целевая доля, incrementality.
+**Inputs:** targetShare (5–50%), marginPct (5–35%), incrementality (full/partial/none), category (kitchen/bathroom/storage).
 
-**Visualizations:** Waterfall (ECharts), Sensitivity line (Recharts), Grouped bar × Radar (ECharts), Multi-line trend, Premium heatmap table.
+**Warning логика:**
+- `cap_hit` — если хоть одна категория достигает кэпа дисконта (проверяется ПЕРВОЙ)
+- `roi_negative` — если ROI < 1 (только для Storage+Kitchen при экстремальных params; Bathroom всегда cap_hit)
+
+**Реализованные визуализации:**
+- Таб А: KPI-карточки (ROI, ΔВыручка, ΔМаржа, Дисконт), BarChart по категориям, LineChart sensitivity margin×share
+- Таб Б: карточки ROI по категориям (badge «Лучший ROI» у Bathroom 2.39×), сводная таблица
+- Таб В: benchmark таблица Новосел vs Не-Новосел (premium-индексы по конверсии, AOV, выручке)
+
+**Тесты:**
+- 14 unit тестов (Vitest) — формулы ScenarioA/B/C
+- 34 e2e тестов (Playwright) — K1–K9, E2–E7, S1–S2, Desktop Chrome + Mobile 375px
 
 ---
 
@@ -108,7 +124,8 @@ totalUplift = Σ uplift_m
 
 ## Conventions
 
-- **Slug** — kebab-case
+- **Slug** — kebab-case (пример: `novosel`, `revenue-uplift`, `conversion-funnel`)
 - **Версия** — bump на minor при изменении формулы (старые сценарии должны быть пересчитываемы), на major — при breaking changes в схеме inputs
 - **Все формулы — pure functions без I/O.** Тестируются юнит-тестами (Vitest)
 - **Категории** окрашены в палитру ЛП: revenue (yellow accent), cx, ops, risk — нейтральные оттенки
+- **Каждый новый калькулятор** — статичный роут `app/(app)/calculators/<slug>/` (не `[slug]`), со своими компонентами

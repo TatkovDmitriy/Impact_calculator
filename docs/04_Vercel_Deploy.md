@@ -11,11 +11,30 @@
 | Service Account | `firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com` |
 | Root Directory | `impact_calculator` (критично — см. ниже) |
 
-## Known Issues (открытые)
+## Known Issues
 
 | ID | Severity | Описание | Статус |
 |---|---|---|---|
-| BUG-03 | P1 | Логин возвращает "Ошибка авторизации" — возможно FIREBASE_ADMIN_PRIVATE_KEY в Vercel с лишними кавычками | Диагностируется |
+| BUG-03 | P1 | Логин возвращал "Ошибка авторизации" — proxy.ts использовал named export вместо default | ✅ RESOLVED (2026-05-07) |
+
+### BUG-03 — Постмортем
+
+**Симптом:** После деплоя `/calculators/novosel` открывалось без редиректа, несмотря на proxy.ts.
+
+**Причина:** `proxy.ts` использовал named export `export function proxy(...)`.
+В локальном Next.js 16 оба варианта работают, но **Vercel Edge Runtime** принимает только default export.
+
+**Решение:**
+```typescript
+// ДО (не работало на Vercel):
+export function proxy(request: NextRequest) { ... }
+
+// ПОСЛЕ (работает):
+export default function proxy(request: NextRequest) { ... }
+export const config = { matcher: [...] };
+```
+
+**Проверено:** S2 тест (Playwright) — редирект на /login без cookie → PASS.
 
 ---
 
@@ -101,6 +120,24 @@ Root Directory: impact_calculator
 - **любая другая ветка / PR** → Preview deploy с уникальным URL
 - Build падает на TypeScript ошибках (strict mode) — by design
 - Environment Variables применяются к соответствующим environments автоматически
+
+---
+
+## ⚠️ Vercel Deployment Protection и E2E тесты
+
+Preview deployments защищены **Vercel Deployment Protection** — при открытии redirectят на `vercel.com/login`, а не на приложение. **Playwright не может пройти Vercel-авторизацию.**
+
+| URL | Тип | Playwright | Пример |
+|---|---|---|---|
+| `impact-calculator-beryl.vercel.app` | Production alias | ✅ Работает | постоянный URL |
+| `impact-calculator-<hash>.vercel.app` | Preview URL | ❌ Блокируется | меняется при каждом деплое |
+
+**Правило:** E2E тесты запускать **только против production alias `beryl`**. `.env.test` должен содержать:
+```
+BASE_URL=https://impact-calculator-beryl.vercel.app
+```
+
+**Почему production alias всегда актуален:** Vercel автоматически перенацеливает его на последний production деплой при каждом push в `main`. Дополнительных действий не требуется.
 
 ---
 

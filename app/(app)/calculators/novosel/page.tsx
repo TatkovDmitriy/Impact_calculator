@@ -204,16 +204,6 @@ export default function NovoselPage() {
                 onChange={(v) => handleInputChange({ marginPct: v / 100 })}
               />
 
-              <SliderField
-                label="Доля сопутствующих услуг"
-                value={Math.round(inputs.serviceSharePct * 100)}
-                min={0}
-                max={30}
-                step={1}
-                format={(v) => v + '%'}
-                onChange={(v) => handleInputChange({ serviceSharePct: v / 100 })}
-              />
-
               {/* Incrementality */}
               <div>
                 <div className="mb-1.5 flex items-center gap-1.5">
@@ -304,7 +294,7 @@ export default function NovoselPage() {
                 <ScenarioBPanel result={resultB} />
               </Tabs.Content>
               <Tabs.Content value="c" className="focus:outline-none">
-                <ScenarioCPanel result={resultC} />
+                <ScenarioCPanel result={resultC} category={inputs.category} />
               </Tabs.Content>
             </Tabs.Root>
           </div>

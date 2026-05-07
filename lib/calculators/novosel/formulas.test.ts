@@ -214,4 +214,12 @@ describe('computeScenarioC', () => {
     // Kitchen share = 4179 / 35736 ≈ 0.117
     expect(apr.byCategory.kitchen.novoselShare).toBeCloseTo(0.117, 2);
   });
+
+  it('clientMetrics includes paidPerClient fields — regression BUG-07', () => {
+    // novoselPaidPerClient=0.75 and nonNovoselPaidPerClient=0.48 must be in result
+    // (previously missing — "Оплачено/клиент" card showed 1.25/1.10 instead of 0.75/0.48)
+    const result = computeScenarioC(MOCK_BASELINE);
+    expect(result.clientMetrics.novoselPaidPerClient).toBeCloseTo(0.75, 4);
+    expect(result.clientMetrics.nonNovoselPaidPerClient).toBeCloseTo(0.48, 4);
+  });
 });

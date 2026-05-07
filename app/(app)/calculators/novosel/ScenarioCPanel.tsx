@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import type { ScenarioCResult } from '@/lib/calculators/novosel/types';
+import type { ScenarioCResult, Category } from '@/lib/calculators/novosel/types';
 
 const CAT_LABELS: Record<string, string> = {
   kitchen: 'Кухня',
@@ -20,16 +20,22 @@ const METRIC_LABELS: Record<TrendMetric, string> = {
   share: 'Доля Новоселов (%)',
 };
 
+const ALL_CATS: Category[] = ['kitchen', 'bathroom', 'storage'];
+
 interface Props {
   result: ScenarioCResult;
+  category: Category | 'all';
 }
 
-export function ScenarioCPanel({ result }: Props) {
+export function ScenarioCPanel({ result, category }: Props) {
   const [metric, setMetric] = useState<TrendMetric>('aov');
+
+  const catsToShow: Category[] = category === 'all' ? ALL_CATS : [category];
 
   const trendData = result.trend.map(({ month, byCategory }) => {
     const row: Record<string, number | string> = { month };
-    for (const [cat, vals] of Object.entries(byCategory)) {
+    for (const cat of catsToShow) {
+      const vals = byCategory[cat];
       if (metric === 'aov') {
         row[`${CAT_LABELS[cat]} Нов`] = vals.novoselAov;
         row[`${CAT_LABELS[cat]} Не нов`] = vals.nonNovoselAov;
@@ -43,14 +49,8 @@ export function ScenarioCPanel({ result }: Props) {
     return row;
   });
 
-  const novoselLines = metric === 'share'
-    ? ['Кухня доля', 'Ванная доля', 'Хранение доля']
-    : ['Кухня Нов', 'Ванная Нов', 'Хранение Нов'];
-  const nonNovoselLines = metric === 'share' ? [] : ['Кухня Не нов', 'Ванная Не нов', 'Хранение Не нов'];
-  const allLines = [...novoselLines, ...nonNovoselLines];
-
-  const NOV_COLORS = ['#FDC300', '#2F3738', '#8B8B8B'];
-  const NON_COLORS = ['#C4C4C4', '#5A6166', '#AAAAAA'];
+  const NOV_COLORS: Record<Category, string> = { kitchen: '#FDC300', bathroom: '#2F3738', storage: '#8B8B8B' };
+  const NON_COLORS: Record<Category, string> = { kitchen: '#C4C4C4', bathroom: '#5A6166', storage: '#AAAAAA' };
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,12 +113,12 @@ export function ScenarioCPanel({ result }: Props) {
           <div className="text-xs text-lp-text-muted mb-1">Оплачено/клиент</div>
           <div className="flex items-end gap-3">
             <div>
-              <div className="text-xl font-bold text-lp-dark">{result.clientMetrics.novoselProjectsPerClient.toFixed(2)}</div>
+              <div className="text-xl font-bold text-lp-dark">{result.clientMetrics.novoselPaidPerClient.toFixed(2)}</div>
               <div className="text-xs text-lp-text-muted">Новосел</div>
             </div>
             <div className="text-sm text-lp-text-muted pb-1">vs</div>
             <div>
-              <div className="text-xl font-bold text-lp-text-muted">{result.clientMetrics.nonNovoselProjectsPerClient.toFixed(2)}</div>
+              <div className="text-xl font-bold text-lp-text-muted">{result.clientMetrics.nonNovoselPaidPerClient.toFixed(2)}</div>
               <div className="text-xs text-lp-text-muted">Не Новосел</div>
             </div>
           </div>
@@ -157,12 +157,14 @@ export function ScenarioCPanel({ result }: Props) {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend wrapperStyle={{ fontSize: 10 }} />
-            {novoselLines.map((key, i) => (
-              <Line key={key} type="monotone" dataKey={key} stroke={NOV_COLORS[i]} strokeWidth={2} dot={{ r: 3 }} />
-            ))}
-            {nonNovoselLines.map((key, i) => (
-              <Line key={key} type="monotone" dataKey={key} stroke={NON_COLORS[i]} strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />
-            ))}
+            {catsToShow.map((cat) => {
+              const novKey = metric === 'share' ? `${CAT_LABELS[cat]} доля` : `${CAT_LABELS[cat]} Нов`;
+              return <Line key={novKey} type="monotone" dataKey={novKey} stroke={NOV_COLORS[cat]} strokeWidth={2} dot={{ r: 3 }} />;
+            })}
+            {metric !== 'share' && catsToShow.map((cat) => {
+              const nonKey = `${CAT_LABELS[cat]} Не нов`;
+              return <Line key={nonKey} type="monotone" dataKey={nonKey} stroke={NON_COLORS[cat]} strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />;
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>

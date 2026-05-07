@@ -189,6 +189,8 @@ export function computeScenarioC(baseline: NovoselBaseline): ScenarioCResult {
       baseline.novoselPaidPerClient / baseline.nonNovoselPaidPerClient - 1,
     novoselProjectsPerClient: baseline.novoselProjectsPerClient,
     nonNovoselProjectsPerClient: baseline.nonNovoselProjectsPerClient,
+    novoselPaidPerClient: baseline.novoselPaidPerClient,
+    nonNovoselPaidPerClient: baseline.nonNovoselPaidPerClient,
   };
 
   const trend = baseline.trend.map(({ month, byCategory }) => ({

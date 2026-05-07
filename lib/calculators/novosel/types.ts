@@ -83,6 +83,8 @@ export interface ScenarioCResult {
     paidPerClientLift: number;
     novoselProjectsPerClient: number;
     nonNovoselProjectsPerClient: number;
+    novoselPaidPerClient: number;    // 0.75
+    nonNovoselPaidPerClient: number; // 0.48
   };
   trend: Array<{
     month: string;

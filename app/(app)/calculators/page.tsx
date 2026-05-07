@@ -3,7 +3,7 @@ import { Calculator } from 'lucide-react';
 
 const CALCULATORS = [
   {
-    slug: 'novosel-loyalty-impact',
+    slug: 'novosel',
     title: 'Новосел: программа лояльности',
     description:
       'Стоит ли дисконт до 85 000 ₽ той выручки и маржи, которую приносят Новоселы? Три сценария: рост доли, сравнение категорий, бенчмарк сегментов.',

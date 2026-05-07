@@ -35,7 +35,7 @@ Workflow: Дмитрий → PM → DEV → QA → PM → Дмитрий. См. 
 
 ## Стек (must know)
 
-- **Frontend:** Next.js 15 (App Router) + TypeScript strict + Tailwind + shadcn/ui
+- **Frontend:** Next.js 16.2.5 (App Router) + TypeScript strict + Tailwind v4 + Radix UI примитивы (НЕ shadcn/ui npm-пакет)
 - **Графики:** Recharts (простые) + ECharts (сложные) + Framer Motion (анимации)
 - **Backend:** Next.js API routes + Firebase Admin SDK
 - **DB / Auth:** Firebase (Firestore + Email/Password Auth с whitelist)
@@ -56,7 +56,8 @@ Workflow: Дмитрий → PM → DEV → QA → PM → Дмитрий. См. 
 2. **DEV не выкатывает без QA.** Релиз только после QA-аппрува.
 3. **Арифметика проверяется независимо.** PM перепроверяет RICE/ROI вручную; QA пересчитывает формулы на 2-3 кейсах.
 4. **Снэпшот baseline в каждом сценарии.** При сохранении расчёта — копируем срез метрик из Sheets, чтобы старые сценарии не "плыли".
-5. **Никаких секретов в коде.** `.env.local` в `.gitignore`. Все ключи — в Vercel env vars.
+5. **Никаких секретов в коде.** `.env.local` в `.gitignore`. Все ключи — в Vercel env vars (11 переменных).
+5a. **Firestore whitelist — поле `emails`, тип array.** `config/access.emails` — именно это имя читает session route. Firebase Auth пользователи создаются вручную в Firebase Console перед первым логином.
 6. **TypeScript strict.** Никаких `any` в production-коде.
 7. **Чёткая маркировка адресата ТЗ.** Заголовок секции + код-шапка + маршрутизационная таблица если несколько ТЗ.
 

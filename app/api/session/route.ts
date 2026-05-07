@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     // Check email whitelist
     const accessDoc = await adminDb.doc('config/access').get();
     const allowedEmails: string[] = accessDoc.exists
-      ? (accessDoc.data()?.allowedEmails ?? []).map((e: string) => e.toLowerCase())
+      ? (accessDoc.data()?.emails ?? []).map((e: string) => e.toLowerCase())
       : [];
 
     if (!allowedEmails.includes(email)) {

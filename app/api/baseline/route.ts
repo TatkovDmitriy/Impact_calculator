@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { adminDb } from '@/lib/firebase/admin';
 import type { NovoselBaseline } from '@/lib/calculators/novosel/types';
 
@@ -86,6 +87,11 @@ function todayStr() {
 }
 
 export async function GET(request: Request) {
+  const cookieStore = await cookies();
+  if (!cookieStore.get('auth_uid')?.value) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const forceRefresh = searchParams.get('refresh') === '1';
   const today = todayStr();

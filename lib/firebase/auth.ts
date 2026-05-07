@@ -26,7 +26,7 @@ export async function isAllowedEmail(email: string): Promise<boolean> {
   try {
     const snap = await getDoc(doc(db, 'config', 'access'));
     if (!snap.exists()) return false;
-    const allowed: string[] = snap.data().allowedEmails ?? [];
+    const allowed: string[] = snap.data().emails ?? [];
     return allowed.includes(email.toLowerCase());
   } catch {
     return false;

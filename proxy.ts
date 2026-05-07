@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'auth_uid';
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
   const isAuthenticated = Boolean(session?.value);

@@ -8,11 +8,11 @@ const novoselInputsSchema = z.object({
   scenario: z.enum(['share-growth', 'category-compare', 'segment-benchmark']),
   category: z.enum(['bathroom', 'kitchen', 'storage', 'all']),
   marginPct: z.number().min(0.05).max(0.5),
-  discountPerProject: z.number().min(0).max(150000),
   horizonMonths: z.number().int().min(1).max(36),
   targetNovoselShare: z.number().min(0.05).max(0.5),
   dealGrowthPct: z.number().min(-0.2).max(0.5),
   incrementality: z.enum(['full', 'half', 'none']),
+  serviceSharePct: z.number().min(0).max(1),
 });
 
 export const novoselPlugin: CalculatorPlugin<NovoselInputs, NovoselResult, NovoselBaseline> = {

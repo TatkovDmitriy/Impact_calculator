@@ -94,12 +94,24 @@
 | Параметр | Дефолт | Диапазон | Тип |
 |---|---|---|---|
 | Маржа проекта (%) | 20% | 5–50% | slider |
-| Дисконт на 1 оплаченный проект (руб.) | 85 000 | 0–150 000 | number |
 | Горизонт расчёта (мес) | 12 | 1–36 | slider |
 | Тип категории | Kitchen | Bathroom / Kitchen / Storage / Все | radio/select |
 | Целевая доля Новоселов (сценарий) | 15% | 5–50% | slider |
 | Рост общего потока сделок/мес (%) | 0% | -20–+50% | slider |
 | Тип incrementality | Fully incremental | Fully incremental / Partially (50%) / Non-incremental | radio |
+| Доля сопутствующих услуг (от выручки) | 0% | 0–30% | slider (optional) |
+
+> ⚠️ **ДИСКОНТ — AUTO-CALC, не ручной ввод.**
+> Дисконт рассчитывается по реальной механике программы: `min(aov × 10%, category_cap)`
+>
+> Кэпы по категориям (актуально с 01.04.2026):
+> | Категория | Кэп скидки | Промокодов |
+> |---|---|---|
+> | Kitchen | 40 000 ₽ | 1 |
+> | Bathroom | 10 000 ₽ | **2** (до 20 000 ₽/клиента) |
+> | Storage | 10 000 ₽ | 1 |
+>
+> При AOV Новосела апр 2026: Kitchen → 16 630 ₽, Bathroom → 10 000 ₽ (кэп), Storage → 7 418 ₽
 
 **Параметр "Тип incrementality"** — ключевое допущение: пришли ли Новоселы благодаря программе (полностью incremental), или пришли бы и без неё (тогда дисконт — чистый убыток).
 
@@ -122,15 +134,23 @@ revenue_non_novosel = non_novosel_created_new × conv_non_novosel × aov_non_nov
 total_revenue = revenue_novosel + revenue_non_novosel
 
 paid_novosel = novosel_created_new × conv_novosel
+
+# ПРАВИЛЬНЫЙ РАСЧЁТ ДИСКОНТА: 10% от AOV с кэпом по категории
+CATEGORY_CAPS = { kitchen: 40_000, bathroom: 10_000, storage: 10_000 }
+discount_per_project = min(aov_novosel × 0.10, CATEGORY_CAPS[category])
+# Bathroom особый случай: 2 промокода на клиента (но 1 промокод = 1 проект/сделка)
 discount_cost = paid_novosel × discount_per_project
 
-gross_margin = total_revenue × margin_pct
+# Опциональная надбавка за сопутствующие услуги (монтаж, замер — полная маржа)
+services_uplift = revenue_novosel × services_share_pct × margin_pct
+
+gross_margin = total_revenue × margin_pct + services_uplift
 net_margin = gross_margin - discount_cost
 
 # Delta vs baseline
 delta_revenue = total_revenue - baseline_revenue
 delta_net_margin = net_margin - baseline_net_margin
-roi_program = (delta_net_margin / discount_cost) × 100  // ROI программы дисконта
+roi_program = gross_margin_novosel / discount_cost  // > 1 = программа окупается
 ```
 
 **Визуализация:**
@@ -194,14 +214,26 @@ project_per_client_premium = (projects_novosel / projects_non_novosel - 1) × 10
 ```typescript
 // lib/calculators/novosel-loyalty-impact.ts
 
+// Кэпы по категориям — официальные условия программы (актуально с 01.04.2026)
+const DISCOUNT_CAPS: Record<string, number> = {
+  kitchen:  40_000,  // 10%, макс 40 000 ₽
+  bathroom: 10_000,  // 10%, макс 10 000 ₽ × 2 промокода = до 20 000 ₽/клиента
+  storage:  10_000,  // 10%, макс 10 000 ₽
+};
+
+// Реальный дисконт на проект = min(aov × 10%, cap)
+function discountPerProject(category: string, aov: number): number {
+  return Math.min(aov * 0.10, DISCOUNT_CAPS[category] ?? 10_000);
+}
+
 interface NovoselInputs {
   category: 'bathroom' | 'kitchen' | 'storage' | 'all';
-  marginPct: number;          // 0..1
-  discountPerProject: number; // руб
+  marginPct: number;           // 0..1
   horizonMonths: number;
-  targetNovoseloShare: number; // 0..1
-  dealGrowthPct: number;       // ежемесячный рост потока, 0..1
+  targetNovoselShare: number;  // 0..1
+  dealGrowthPct: number;        // ежемесячный рост потока, 0..1
   incrementality: 'full' | 'half' | 'none';
+  serviceSharePct: number;     // 0..1, доля сопутствующих услуг (optional, дефолт 0)
   scenario: 'share-growth' | 'category-compare' | 'segment-benchmark';
 }
 
@@ -278,8 +310,39 @@ function computeScenarioC(baseline) {
 - [ ] Из списка сохранённых сценариев можно воспроизвести расчёт с теми же inputs
 
 ### AC-6: Формулы (проверяет QA независимо)
-- [ ] Контрольный кейс 1: Kitchen, доля 11.7% (baseline), маржа 20%, дисконт 85k → net margin совпадает с ручным пересчётом
-- [ ] Контрольный кейс 2: All categories, доля 25%, incrementality=full → ROI > 0
+
+**Контрольный кейс 1 — Kitchen baseline (апрель 2026, incrementality=full):**
+```
+AOV Новосела = 166 299 ₽
+Дисконт = min(166 299 × 10%, 40 000) = min(16 630, 40 000) = 16 630 ₽/проект ✓
+Оплачено Новосел = 4 179 × 44.1% = 1 843 проекта
+Discount cost = 1 843 × 16 630 = 30 649 090 ₽ (~30.6 млн)
+Выручка Новосел = 306 654 683 ₽
+Gross margin = 306 654 683 × 20% = 61 330 937 ₽
+Net margin Новосел = 61 330 937 - 30 649 090 = +30 681 847 ₽ (ПРИБЫЛЬНО)
+ROI = 61.3M / 30.6M = 2.0× ✅
+```
+
+**Контрольный кейс 2 — Storage (проверка механики кэпа):**
+```
+AOV Новосела Storage = 74 180 ₽
+Дисконт = min(74 180 × 10%, 10 000) = min(7 418, 10 000) = 7 418 ₽/проект ✓
+(Кэп НЕ достигается — дисконт ниже кэпа, warning НЕ показывается)
+```
+
+**Контрольный кейс 3 — Bathroom (проверка кэпа):**
+```
+AOV Новосела Bathroom = 119 374 ₽
+Дисконт = min(119 374 × 10%, 10 000) = min(11 937, 10 000) = 10 000 ₽/проект ✓
+(Кэп достигается — показать badge «Максимальная скидка достигнута»)
+```
+
+**Контрольный кейс 4 — старая неверная модель ДОЛЖНА быть отклонена:**
+```
+Если discount_cost = paid × 85 000 → это BUG. Kitchen: 1843 × 85000 = 156.7M → убыток.
+Правильно: 1843 × 16 630 = 30.6M → прибыль.
+QA: убедиться, что в коде нет hardcode 85 000 как discount_per_project.
+```
 - [ ] Контрольный кейс 3: All categories, доля 25%, incrementality=none → ROI < 0 (дисконт — чистый убыток)
 
 ---

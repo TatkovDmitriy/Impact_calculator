@@ -10,6 +10,17 @@ import type {
 
 const ALL_CATEGORIES: Category[] = ['bathroom', 'kitchen', 'storage'];
 
+// Real program caps from official rules (01.04.2026)
+const DISCOUNT_CAPS: Record<Category, number> = {
+  kitchen: 40_000,
+  bathroom: 10_000,  // ×2 promos per client = up to 20,000/client, but 10k per project
+  storage: 10_000,
+};
+
+function discountPerProject(category: Category, aov: number): number {
+  return Math.min(aov * 0.10, DISCOUNT_CAPS[category]);
+}
+
 export function computeScenarioA(
   inputs: NovoselInputs,
   baseline: NovoselBaseline
@@ -46,15 +57,20 @@ export function computeScenarioA(
   let revNovNew = 0;
   let revNonNew = 0;
   let novoselPaidCount = 0;
+  let discountCost = 0;
+  let baselineDiscountCost = 0;
   for (const c of categories) {
     const m = baseline.byCategory[c];
+    const capDiscount = discountPerProject(c, m.novoselAov);
     const catShare = m.totalCreated / totalCreated;
     const novoselCreatedNewC = novoselCreatedNewTotal * catShare;
     const nonNovoselCreatedNewC = m.totalCreated - novoselCreatedNewC;
+    const paidNewC = novoselCreatedNewC * m.novoselConversion;
     revNovNew += novoselCreatedNewC * m.novoselConversion * m.novoselAov;
-    revNonNew +=
-      nonNovoselCreatedNewC * m.nonNovoselConversion * m.nonNovoselAov;
-    novoselPaidCount += novoselCreatedNewC * m.novoselConversion;
+    revNonNew += nonNovoselCreatedNewC * m.nonNovoselConversion * m.nonNovoselAov;
+    novoselPaidCount += paidNewC;
+    discountCost += paidNewC * capDiscount;
+    baselineDiscountCost += m.novoselCreated * m.novoselConversion * capDiscount;
   }
 
   // Apply incrementality factor to the novosel revenue delta
@@ -71,9 +87,6 @@ export function computeScenarioA(
   const baselineGrossMargin = baselineRevenue * inputs.marginPct;
   const scenarioGrossMargin = scenarioRevenue * inputs.marginPct;
 
-  const baselineDiscountCost = baselineNovoselPaid * inputs.discountPerProject;
-  const discountCost = novoselPaidCount * inputs.discountPerProject;
-
   const baselineNetMargin = baselineGrossMargin - baselineDiscountCost;
   const scenarioNetMargin = scenarioGrossMargin - discountCost;
   const deltaRevenue = scenarioRevenue - baselineRevenue;
@@ -82,23 +95,14 @@ export function computeScenarioA(
   const roiDiscount =
     discountCost > 0 ? scenarioGrossMargin / discountCost : Infinity;
 
-  // Warning: use weighted average aov_nov for 'all', single value otherwise
-  let weightedAovNov: number;
-  if (categories.length === 1) {
-    weightedAovNov = baseline.byCategory[categories[0]].novoselAov;
-  } else {
-    let weightedSum = 0;
-    for (const c of categories) {
-      weightedSum +=
-        baseline.byCategory[c].novoselCreated * baseline.byCategory[c].novoselAov;
-    }
-    weightedAovNov =
-      novoselCreatedBaseline > 0 ? weightedSum / novoselCreatedBaseline : 0;
-  }
+  // Cap-hit: any selected category where 10% AOV exceeds its cap
+  const capHit = categories.some(
+    (c) => baseline.byCategory[c].novoselAov * 0.10 > DISCOUNT_CAPS[c]
+  );
 
   let warning: ScenarioAResult['warning'];
-  if (weightedAovNov < inputs.discountPerProject) {
-    warning = 'discount_exceeds_aov';
+  if (capHit) {
+    warning = 'cap_hit';
   } else if (roiDiscount < 1) {
     warning = 'roi_negative';
   }
@@ -128,7 +132,8 @@ export function computeScenarioB(
     const novoselPaid = m.novoselCreated * m.novoselConversion;
     const novoselRevenue = novoselPaid * m.novoselAov;
     const grossMargin = novoselRevenue * inputs.marginPct;
-    const discountCost = novoselPaid * inputs.discountPerProject;
+    const capDiscount = discountPerProject(c, m.novoselAov);
+    const discountCost = novoselPaid * capDiscount;
     const netMargin = grossMargin - discountCost;
     const netMarginPerDeal =
       m.novoselCreated > 0 ? netMargin / m.novoselCreated : 0;

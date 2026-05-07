@@ -80,7 +80,19 @@ service cloud.firestore {
 }
 ```
 
+## Service Account (Admin SDK + Google Sheets)
+
+**Создан:** 2026-05-07  
+**Email:** `firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com`  
+**Key ID:** `8451939c153ce1f991258df56b18a8e89706a851`  
+**Используется для:** Firebase Admin SDK (API routes) + Google Sheets API (тот же SA, проще)  
+**Приватный ключ:** только в `.env.local` (НЕ в репозитории)  
+
+⚠️ Таблицу Google Sheets нужно расшарить на этот email с доступом **Viewer**.
+
 ## Переменные окружения (`.env.local` — НЕ коммитить)
+
+Файл создан и заполнен. Шаблон:
 
 ```env
 # Firebase Web SDK (публичные — попадут в бандл)
@@ -91,13 +103,13 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=impact-calc-lp.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=33131969665
 NEXT_PUBLIC_FIREBASE_APP_ID=1:33131969665:web:1b9b36c537ce2174966180
 
-# Firebase Admin SDK (только сервер — для API routes)
-FIREBASE_ADMIN_CLIENT_EMAIL=...
-FIREBASE_ADMIN_PRIVATE_KEY=...
+# Firebase Admin SDK (только сервер)
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-# Google Sheets API — Service Account (создать в GCP Console)
-GOOGLE_SHEETS_CLIENT_EMAIL=...
-GOOGLE_SHEETS_PRIVATE_KEY=...
+# Google Sheets — тот же SA
+GOOGLE_SHEETS_CLIENT_EMAIL=firebase-adminsdk-fbsvc@impact-calc-lp.iam.gserviceaccount.com
+GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 GOOGLE_SHEETS_SPREADSHEET_ID=103C2StHfJg9LPr9QFB4xmwkqLc_6pPoZT7_CKo3DuwE
 ```
 

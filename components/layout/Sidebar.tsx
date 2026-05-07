@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calculator, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Calculator, BookOpen, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/calculators', label: 'Калькуляторы', icon: Calculator },
   { href: '/scenarios', label: 'Сценарии', icon: BookOpen },
+  { href: '/dev-check', label: 'Dev Check', icon: Activity, devOnly: true },
 ] as const;
 
 export function Sidebar() {
@@ -17,7 +18,9 @@ export function Sidebar() {
   return (
     <aside className="hidden w-56 shrink-0 border-r border-lp-border bg-white lg:flex lg:flex-col">
       <nav className="flex flex-col gap-1 p-3 pt-4">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon, ...rest }) => {
+          const devOnly = 'devOnly' in rest ? rest.devOnly : false;
+          if (devOnly && process.env.NODE_ENV === 'production') return null;
           const isActive = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link

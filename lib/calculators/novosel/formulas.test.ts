@@ -62,11 +62,11 @@ const BASE_INPUTS: NovoselInputs = {
   scenario: 'share-growth',
   category: 'kitchen',
   marginPct: 0.20,
-  discountPerProject: 85000,
   horizonMonths: 12,
   targetNovoselShare: 0.117,
   dealGrowthPct: 0,
   incrementality: 'full',
+  serviceSharePct: 0,
 };
 
 // ── computeScenarioA ──────────────────────────────────────────────────────────
@@ -79,71 +79,109 @@ describe('computeScenarioA', () => {
       MOCK_BASELINE
     );
     const relativeDelta = Math.abs(result.deltaRevenue) / result.baselineRevenue;
-    expect(relativeDelta).toBeLessThan(0.01); // < 1% delta
+    expect(relativeDelta).toBeLessThan(0.01);
     expect(result.baselineRevenue).toBeGreaterThan(0);
   });
 
-  it('Kitchen targetShare=0.25 → scenarioRevenue > baselineRevenue, roiDiscount computed', () => {
+  it('Kitchen APR 2026: ROI >> 1 at 20% margin, netMargin positive (correct model)', () => {
+    // Kitchen discount = min(166299 × 0.10, 40000) = 16,630 (below cap)
+    // roiDiscount = scenarioGrossMargin (ALL deals) / discountCost — so it's much > 2
+    // because denominator is only novosel discount while numerator includes all kitchen revenue
+    const result = computeScenarioA(
+      { ...BASE_INPUTS, category: 'kitchen', targetNovoselShare: 0.117, incrementality: 'full' },
+      MOCK_BASELINE
+    );
+    expect(result.roiDiscount).toBeGreaterThan(1);
+    expect(result.scenarioNetMargin).toBeGreaterThan(0);
+    // discount should be ~16,630/project (10% AOV), NOT 85,000/project
+    // paid ≈ 1843 projects → discountCost ≈ 30.6M, far below old 85k model (156M)
+    expect(result.discountCost).toBeGreaterThan(25_000_000);
+    expect(result.discountCost).toBeLessThan(40_000_000);
+  });
+
+  it('Kitchen targetShare=0.25 → scenarioRevenue > baselineRevenue', () => {
     const result = computeScenarioA(
       { ...BASE_INPUTS, category: 'kitchen', targetNovoselShare: 0.25, incrementality: 'full' },
       MOCK_BASELINE
     );
     expect(result.scenarioRevenue).toBeGreaterThan(result.baselineRevenue);
-    expect(result.roiDiscount).toBeGreaterThan(0);
-    expect(result.discountCost).toBeGreaterThan(0);
-    // roiDiscount = scenarioGrossMargin / discountCost
     expect(result.roiDiscount).toBeCloseTo(
       result.scenarioGrossMargin / result.discountCost,
       5
     );
   });
 
-  it('Storage discount=85000 → warning=discount_exceeds_aov (aov 74180 < 85000)', () => {
+  it('Bathroom → warning=cap_hit (119374 × 10% = 11937 > cap 10000)', () => {
     const result = computeScenarioA(
-      { ...BASE_INPUTS, category: 'storage', discountPerProject: 85000 },
+      { ...BASE_INPUTS, category: 'bathroom' },
       MOCK_BASELINE
     );
-    expect(result.warning).toBe('discount_exceeds_aov');
+    expect(result.warning).toBe('cap_hit');
+  });
+
+  it('Storage → no warning (74180 × 10% = 7418 < cap 10000)', () => {
+    const result = computeScenarioA(
+      { ...BASE_INPUTS, category: 'storage' },
+      MOCK_BASELINE
+    );
+    expect(result.warning).toBeUndefined();
+  });
+
+  it('incrementality=none → novosel uplift zeroed, deltaRevenue < 0 (displaced non-novosel)', () => {
+    // targetShare=0.25 > baseline 0.117: more deals classified as novosel
+    // factor=0 → novosel revenue delta zeroed, but non-novosel pool shrinks → net negative
+    const base = computeScenarioA(
+      { ...BASE_INPUTS, category: 'kitchen', targetNovoselShare: 0.25, incrementality: 'none' },
+      MOCK_BASELINE
+    );
+    expect(base.deltaRevenue).toBeLessThan(0);
+    expect(base.discountCost).toBeGreaterThan(0);
   });
 });
 
 // ── computeScenarioB ──────────────────────────────────────────────────────────
 
 describe('computeScenarioB', () => {
-  it('margin=0.20 discount=85000 → bestByRoi is not Storage (Storage roi ≈ 0.17)', () => {
-    const result = computeScenarioB(
-      { ...BASE_INPUTS, marginPct: 0.20, discountPerProject: 85000 },
-      MOCK_BASELINE
-    );
-    const storageItem = result.items.find((i) => i.category === 'storage')!;
-    expect(storageItem.roiDiscount).toBeLessThan(1);
-    expect(result.bestByRoi).not.toBe('storage');
-    // Kitchen should have highest roi among the three
-    const kitchenItem = result.items.find((i) => i.category === 'kitchen')!;
-    expect(kitchenItem.roiDiscount).toBeGreaterThan(storageItem.roiDiscount);
-  });
-
-  it('discount=0 → netMargin === grossMargin for all categories', () => {
-    const result = computeScenarioB(
-      { ...BASE_INPUTS, discountPerProject: 0 },
-      MOCK_BASELINE
-    );
+  it('margin=0.20 → all categories ROI > 1 (correct model)', () => {
+    // Kitchen: min(166299×0.10,40000)=16630; ROI=166299×0.20/16630≈2.0
+    // Bathroom: min(119374×0.10,10000)=10000; ROI=119374×0.20/10000≈2.39
+    // Storage: min(74180×0.10,10000)=7418; ROI=74180×0.20/7418≈2.0
+    const result = computeScenarioB(BASE_INPUTS, MOCK_BASELINE);
     for (const item of result.items) {
-      expect(item.netMargin).toBeCloseTo(item.grossMargin, 5);
-      expect(item.discountCost).toBe(0);
+      expect(item.roiDiscount).toBeGreaterThan(1);
     }
   });
 
-  it('margin=0.55 discount=85000 → Kitchen roiDiscount > 1 (break-even ≈ 51.1%)', () => {
-    // NOTE: ТЗ specified margin=0.50 expecting roi>1, but arithmetic shows
-    // (166299 × 0.50) / 85000 = 0.978 < 1. Break-even = 85000/166299 = 51.1%.
-    // Test uses margin=0.55 which gives (166299×0.55)/85000 = 1.076 > 1. ← correct
-    const result = computeScenarioB(
-      { ...BASE_INPUTS, marginPct: 0.55, discountPerProject: 85000 },
-      MOCK_BASELINE
-    );
-    const kitchenItem = result.items.find((i) => i.category === 'kitchen')!;
-    expect(kitchenItem.roiDiscount).toBeGreaterThan(1);
+  it('Bathroom has highest roiDiscount at 20% margin', () => {
+    const result = computeScenarioB(BASE_INPUTS, MOCK_BASELINE);
+    const bathroom = result.items.find((i) => i.category === 'bathroom')!;
+    expect(result.bestByRoi).toBe('bathroom');
+    expect(bathroom.roiDiscount).toBeCloseTo(2.39, 1);
+  });
+
+  it('Kitchen roiDiscount ≈ 2.0 at 20% margin (CPO ROI proof)', () => {
+    const result = computeScenarioB(BASE_INPUTS, MOCK_BASELINE);
+    const kitchen = result.items.find((i) => i.category === 'kitchen')!;
+    // min(166299×0.10, 40000) = 16630 < 40000 (below cap)
+    // ROI = (166299 × 0.20) / 16630 = 33259.8 / 16630 ≈ 2.0
+    expect(kitchen.roiDiscount).toBeCloseTo(2.0, 1);
+    // discountCost = paid × discountPerProject = (4179 × 0.441) × 16630 ≈ 30.65M
+    const expectedDiscount =
+      MOCK_BASELINE.byCategory.kitchen.novoselCreated *
+      MOCK_BASELINE.byCategory.kitchen.novoselConversion *
+      16630;
+    expect(kitchen.discountCost).toBeCloseTo(expectedDiscount, -3);
+  });
+
+  it('discountCost per project never exceeds category cap', () => {
+    const result = computeScenarioB(BASE_INPUTS, MOCK_BASELINE);
+    const caps: Record<string, number> = { kitchen: 40000, bathroom: 10000, storage: 10000 };
+    for (const item of result.items) {
+      const m = MOCK_BASELINE.byCategory[item.category as 'kitchen' | 'bathroom' | 'storage'];
+      const paidProjects = m.novoselCreated * m.novoselConversion;
+      const discountPerProj = paidProjects > 0 ? item.discountCost / paidProjects : 0;
+      expect(discountPerProj).toBeLessThanOrEqual(caps[item.category] + 0.01);
+    }
   });
 });
 
@@ -168,5 +206,12 @@ describe('computeScenarioC', () => {
     const result = computeScenarioC(MOCK_BASELINE);
     // 0.75 / 0.48 - 1 = 0.5625
     expect(result.clientMetrics.paidPerClientLift).toBeCloseTo(0.5625, 4);
+  });
+
+  it('trend data preserved with correct novoselShare calculation', () => {
+    const result = computeScenarioC(MOCK_BASELINE);
+    const apr = result.trend.find((t) => t.month === '2026-04')!;
+    // Kitchen share = 4179 / 35736 ≈ 0.117
+    expect(apr.byCategory.kitchen.novoselShare).toBeCloseTo(0.117, 2);
   });
 });

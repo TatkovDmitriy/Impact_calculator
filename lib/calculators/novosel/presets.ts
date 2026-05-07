@@ -10,10 +10,10 @@ export const NOVOSEL_PRESETS: ScenarioPreset<NovoselInputs>[] = [
       category: 'all',
       targetNovoselShare: 0.147, // Apr 2026 actual
       marginPct: 0.20,
-      discountPerProject: 85000,
       incrementality: 'full',
       horizonMonths: 12,
       dealGrowthPct: 0,
+      serviceSharePct: 0,
     },
   },
   {
@@ -24,10 +24,10 @@ export const NOVOSEL_PRESETS: ScenarioPreset<NovoselInputs>[] = [
       category: 'all',
       targetNovoselShare: 0.25,
       marginPct: 0.20,
-      discountPerProject: 85000,
       incrementality: 'full',
       horizonMonths: 12,
       dealGrowthPct: 0,
+      serviceSharePct: 0,
     },
   },
   {
@@ -38,10 +38,10 @@ export const NOVOSEL_PRESETS: ScenarioPreset<NovoselInputs>[] = [
       category: 'all',
       targetNovoselShare: 0.147,
       marginPct: 0.20,
-      discountPerProject: 85000,
       incrementality: 'half', // only 50% incremental
       horizonMonths: 12,
       dealGrowthPct: 0,
+      serviceSharePct: 0,
     },
   },
 ];

@@ -8,11 +8,11 @@ export interface NovoselInputs {
   scenario: NovoselScenario;
   category: Category | 'all';
   marginPct: number;            // 0..1, e.g. 0.20
-  discountPerProject: number;   // RUB, e.g. 85000
   horizonMonths: number;        // 1..36
   targetNovoselShare: number;   // 0..1, target share
   dealGrowthPct: number;        // monthly deal flow growth 0..1
   incrementality: Incrementality;
+  serviceSharePct: number;      // 0..1, share of paid projects with bundled services
 }
 
 export interface CategoryMetrics {
@@ -48,7 +48,7 @@ export interface ScenarioAResult {
   deltaNetMargin: number;
   roiDiscount: number;          // scenarioGrossMargin / discountCost; >1 = profitable
   novoselPaidCount: number;
-  warning?: 'discount_exceeds_aov' | 'roi_negative';
+  warning?: 'cap_hit' | 'roi_negative';
 }
 
 export interface CategoryCompareItem {

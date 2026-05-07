@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
+/* ── Lemana PRO brand tokens ───────────────────────────────────────── */
+/* Manrope font is loaded via next/font/google in app/layout.tsx */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --lp-dark:       #2F3738;
+  --lp-yellow:     #FDC300;
+  --lp-danger:     #B84A4A;
+  --lp-bg:         #FFFFFF;
+  --lp-muted:      #F5F5F5;
+  --lp-border:     #E5E5E5;
+  --lp-text-muted: #8B8B8B;
+
+  /* Chart palette — NO green (LP brand guideline) */
+  --chart-1: #FDC300;
+  --chart-2: #2F3738;
+  --chart-3: #8B8B8B;
+  --chart-4: #C4C4C4;
+  --chart-5: #5A6166;
 }
 
+/* ── Tailwind v4 theme extension ───────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-lp-dark:       var(--lp-dark);
+  --color-lp-yellow:     var(--lp-yellow);
+  --color-lp-danger:     var(--lp-danger);
+  --color-lp-bg:         var(--lp-bg);
+  --color-lp-muted:      var(--lp-muted);
+  --color-lp-border:     var(--lp-border);
+  --color-lp-text-muted: var(--lp-text-muted);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-brand: 'Manrope', system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ── Base ──────────────────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: var(--lp-dark);
+  background: var(--lp-bg);
+  -webkit-font-smoothing: antialiased;
 }

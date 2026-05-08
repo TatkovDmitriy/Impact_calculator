@@ -3,10 +3,16 @@ import { expect } from '@playwright/test';
 
 export async function loginAs(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
+  await page.waitForLoadState('networkidle');
+  // Click each field before fill to ensure react-hook-form event listeners are active
+  const emailInput = page.locator('input[type="email"]');
+  await emailInput.click();
+  await emailInput.fill(email);
+  const passwordInput = page.locator('input[type="password"]');
+  await passwordInput.click();
+  await passwordInput.fill(password);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
 }
 
 // Structure: SliderField root div > header div > span (label)

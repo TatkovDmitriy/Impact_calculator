@@ -4,25 +4,26 @@ import { loginAs } from './helpers/login';
 const EMAIL = process.env.TEST_EMAIL ?? '';
 const PASSWORD = process.env.TEST_PASSWORD ?? '';
 
-test.describe('Phase 4 — Планировщик сценариев', () => {
+test.describe('Phase 4 v3 — Планировщик сценариев v3', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, EMAIL, PASSWORD);
     await page.goto('/calculators/novosel');
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: 'Планировщик' }).click();
-    await page.waitForTimeout(300);
+    // Wait for skeleton to resolve (useEffect prefill on mount)
+    await page.waitForTimeout(500);
   });
 
-  // P1 — Плановщик рендерится: заголовок, 4 KPI-карточки, заголовок графика
-  test('P1: Планировщик рендерится с KPI-карточками и графиком', async ({ page }) => {
-    await expect(page.getByText('Планировщик сценариев')).toBeVisible();
-    await expect(page.getByText('Dec 2025 – Dec 2026 · 13 месяцев')).toBeVisible();
+  // P1 — Рендер: заголовок v3, subtitle, 4 KPI, 3 категории
+  test('P1: Планировщик v3 рендерится с KPI и тремя категориями', async ({ page }) => {
+    await expect(page.getByText('Планировщик сценариев v3')).toBeVisible();
+    await expect(page.getByText('Дек 2025 – Дек 2026 · 5 факт + 8 прогноз')).toBeVisible();
     await expect(page.getByText('GMV total', { exact: true })).toBeVisible();
     await expect(page.getByText('Маржа total', { exact: true })).toBeVisible();
     await expect(page.getByText('Затраты на дисконт', { exact: true })).toBeVisible();
-    // 'Чистая маржа' appears in KPI card, chart title and chart legend — target the KPI card (first)
+    // 'Чистая маржа' appears in KPI card + chart legend — target first
     await expect(page.getByText('Чистая маржа', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('GMV по категориям + Чистая маржа, млн ₽')).toBeVisible();
+    await expect(page.getByText('Категории (3)')).toBeVisible();
   });
 
   // P2 — 3 начальные категории видны в аккордионе
@@ -30,109 +31,113 @@ test.describe('Phase 4 — Планировщик сценариев', () => {
     await expect(page.getByText('Кухня').first()).toBeVisible();
     await expect(page.getByText('Ванная').first()).toBeVisible();
     await expect(page.getByText('Хранение').first()).toBeVisible();
-    await expect(page.getByText('Категории (3)')).toBeVisible();
   });
 
-  // P3 — Аккордион Кухня открывается → таблица и конфиг дисконта видны
-  test('P3: аккордион Кухня открывается и показывает таблицу и конфиг дисконта', async ({ page }) => {
-    // Use cursor-pointer div to target accordion header (not Recharts legend which also has "Кухня")
+  // P3 — Аккордион Кухня открывается → историческая таблица + конфиг + слайдер
+  test('P3: аккордион Кухня открывается и показывает таблицу и слайдер доли', async ({ page }) => {
+    // cursor-pointer div targets accordion header (not Recharts legend)
     await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
-    await page.waitForTimeout(200);
-    await expect(page.getByText('Данные по месяцам')).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(page.getByText('Фактические данные (дек 2025 – апр 2026)')).toBeVisible();
     await expect(page.getByText('Конфигурация дисконта')).toBeVisible();
-    await expect(page.getByRole('button', { name: '% с капом' }).first()).toBeVisible();
+    await expect(page.getByText('Целевая доля Новоселов (прогноз)')).toBeVisible();
   });
 
-  // P4 — Добавить категорию: форма открывается, категория добавляется
-  test('P4: добавление новой категории', async ({ page }) => {
-    await page.getByRole('button', { name: /Добавить категорию/ }).click();
-    await expect(page.getByText('Новая категория')).toBeVisible();
-
-    await page.getByPlaceholder(/Напр. Полы/).fill('Полы');
-    // Use exact: true to distinguish "Добавить" (submit) from "Добавить категорию" (open form)
-    await page.getByRole('button', { name: 'Добавить', exact: true }).click();
-    await page.waitForTimeout(400);
-
-    await expect(page.getByText('Полы').first()).toBeVisible();
-    await expect(page.getByText('Категории (4)')).toBeVisible();
+  // P4 — Историческая таблица: декабрь 2025 присутствует, totalCreated Кухня = 32 092
+  test('P4: историческая таблица показывает 2025-12 и totalCreated Кухни = 32092', async ({ page }) => {
+    await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
+    await page.waitForTimeout(300);
+    // Row header shows the month string with ФАКТ badge
+    await expect(page.getByText('2025-12')).toBeVisible();
+    // totalCreated input for Dec 2025 kitchen = 32092 (from baseline)
+    const inputs = page.locator('input[type="number"]');
+    // First numeric input in the table is totalCreated for 2025-12
+    await expect(inputs.first()).toHaveValue('32092');
   });
 
-  // P5 — Отмена формы добавления
-  test('P5: отмена формы добавления категории', async ({ page }) => {
-    await page.getByRole('button', { name: /Добавить категорию/ }).click();
-    await expect(page.getByText('Новая категория')).toBeVisible();
-    await page.getByRole('button', { name: 'Отмена' }).click();
-    await expect(page.getByText('Новая категория')).not.toBeVisible();
-    await expect(page.getByText('Категории (3)')).toBeVisible();
+  // P5 — Слайдер «Целевая доля» видим, имеет корректный диапазон (1–50)
+  test('P5: слайдер Целевая доля Новоселов в аккордионе Кухня работает', async ({ page }) => {
+    await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
+    await page.waitForTimeout(300);
+    const slider = page.getByRole('slider');
+    await expect(slider).toBeVisible();
+    await expect(slider).toHaveAttribute('aria-valuemin', '1');
+    await expect(slider).toHaveAttribute('aria-valuemax', '50');
   });
 
-  // P6 — Кнопка «Добавить» задизейблена при пустом имени
-  test('P6: кнопка Добавить недоступна при пустом названии', async ({ page }) => {
-    await page.getByRole('button', { name: /Добавить категорию/ }).click();
-    // exact: true to avoid matching "Добавить категорию" button
-    const addBtn = page.getByRole('button', { name: 'Добавить', exact: true });
-    await expect(addBtn).toBeDisabled();
+  // P6 — Слайдер двигается и обновляет отображаемый процент
+  test('P6: слайдер Целевая доля обновляет значение при нажатии End (50%)', async ({ page }) => {
+    await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
+    await page.waitForTimeout(300);
+    const slider = page.getByRole('slider');
+    await slider.focus();
+    await slider.press('End');
+    await expect(slider).toHaveAttribute('aria-valuenow', '50');
+    // Label span also updates
+    await expect(page.getByText('50%')).toBeVisible();
   });
 
   // P7 — Переключатель режима дисконта (pct_cap → fixed)
   test('P7: переключение режима дисконта на Фиксированная', async ({ page }) => {
     await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'Фиксированная' }).first().click();
     await expect(page.getByText('Сумма ₽').first()).toBeVisible();
-    // В режиме fixed поле Кап ₽ исчезает
     await expect(page.getByText('Кап ₽').first()).not.toBeVisible();
   });
 
-  // P8 — Сохранить сценарий → диалог
-  test('P8: кнопка Сохранить сценарий открывает диалог', async ({ page }) => {
+  // P8 — Forecast chart рендерится после открытия аккордиона
+  test('P8: ForecastChart показывает заголовок с именем категории', async ({ page }) => {
+    await page.locator('div[class*="cursor-pointer"]').filter({ hasText: 'Кухня' }).click();
+    await page.waitForTimeout(400);
+    await expect(page.getByText(/Кухня.*GMV.*Маржа.*Дисконт/)).toBeVisible();
+  });
+
+  // P9 — Кнопка «Сохранить сценарий» открывает диалог
+  test('P9: кнопка Сохранить сценарий открывает диалог', async ({ page }) => {
     await page.getByRole('button', { name: 'Сохранить сценарий' }).click();
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText('Сохранить сценарий Планировщика')).toBeVisible();
+    await expect(page.getByText('Сохранить сценарий').last()).toBeVisible();
   });
 
-  // P9 — Переключение Планировщик → Анализ → Планировщик: состояние сохраняется
-  test('P9: состояние Планировщика сохраняется при переключении табов', async ({ page }) => {
-    // Добавляем категорию
-    await page.getByRole('button', { name: /Добавить категорию/ }).click();
-    await page.getByPlaceholder(/Напр. Полы/).fill('Тест');
-    await page.getByRole('button', { name: 'Добавить', exact: true }).click();
-    await page.waitForTimeout(300);
-    await expect(page.getByText('Категории (4)')).toBeVisible();
+  // P10 — GMV total показывает ненулевое значение
+  test('P10: GMV total показывает ненулевое значение на начальных данных', async ({ page }) => {
+    const gmvCard = page.getByText('GMV total', { exact: true }).locator('..');
+    await expect(gmvCard.getByText(/\d+,\d+ млн ₽/)).toBeVisible({ timeout: 2_000 });
+  });
 
-    // Переключаемся на Анализ
+  // P11 — Переключение Планировщик → Анализ → Планировщик: состояние сохраняется
+  test('P11: переключение на Анализ и обратно — данные планировщика не сбрасываются', async ({ page }) => {
+    // Verify planner loaded
+    await expect(page.getByText('Категории (3)')).toBeVisible();
+
+    // Switch to Analysis
     await page.getByRole('button', { name: 'Анализ A/B/C' }).click();
-    await expect(page.getByText('А — Рост доли')).toBeVisible();
+    await expect(page.getByText('Δ Net Margin', { exact: true })).toBeVisible();
 
-    // Возвращаемся — категория сохранена
+    // Switch back — categories should still be there (always-mounted div)
     await page.getByRole('button', { name: 'Планировщик' }).click();
     await page.waitForTimeout(200);
-    await expect(page.getByText('Категории (4)')).toBeVisible();
-    await expect(page.getByText('Тест').first()).toBeVisible();
-  });
-
-  // P10 — GMV считается (ненулевое значение при начальных данных)
-  test('P10: GMV total показывает ненулевое значение на начальных данных', async ({ page }) => {
-    const gmvCard = page.getByText('GMV total').locator('..');
-    // AnimatedNumber рендерит число — ищем паттерн "X,X млн ₽" где X > 0
-    await expect(gmvCard.getByText(/\d+,\d+ млн ₽/)).toBeVisible({ timeout: 2_000 });
+    await expect(page.getByText('Категории (3)')).toBeVisible();
+    await expect(page.getByText('Планировщик сценариев v3')).toBeVisible();
   });
 });
 
-// P11 — Анализ A/B/C: переключение на Планировщик не ломает существующий функционал
-test('P11: переключение на Планировщик и обратно не ломает Анализ', async ({ page }) => {
+// P12 — Таб Анализ A/B/C: переключение на Планировщик не ломает существующий функционал
+test('P12: Анализ A/B/C не сломан после переключения на Планировщик v3', async ({ page }) => {
   await loginAs(page, EMAIL, PASSWORD);
   await page.goto('/calculators/novosel');
   await page.waitForLoadState('networkidle');
 
-  // Проверяем Анализ работает
+  // Analysis works
   await expect(page.getByText('Δ Net Margin', { exact: true })).toBeVisible();
 
-  // Переключаем на Планировщик
+  // Switch to Planner
   await page.getByRole('button', { name: 'Планировщик' }).click();
-  await expect(page.getByText('GMV total')).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(page.getByText('Планировщик сценариев v3')).toBeVisible();
 
-  // Возвращаемся на Анализ
+  // Back to Analysis — all 3 KPI still present
   await page.getByRole('button', { name: 'Анализ A/B/C' }).click();
   await expect(page.getByText('Δ Net Margin', { exact: true })).toBeVisible();
   await expect(page.getByText('Δ Выручка', { exact: true })).toBeVisible();

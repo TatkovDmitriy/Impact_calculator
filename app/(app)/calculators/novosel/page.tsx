@@ -15,7 +15,7 @@ import { ScenarioAPanel } from './ScenarioAPanel';
 import { ScenarioBPanel } from './ScenarioBPanel';
 import { ScenarioCPanel } from './ScenarioCPanel';
 import { SaveModal } from './SaveModal';
-import { PlannerTab } from './PlannerTab';
+import { PlannerTabV3 } from './PlannerTabV3';
 import { cn } from '@/lib/utils';
 
 const INCREMENTALITY_OPTIONS = [
@@ -155,7 +155,7 @@ export default function NovoselPage() {
 
         {/* Planner panel — always mounted to preserve state */}
         <div className={outerTab !== 'planner' ? 'hidden' : ''}>
-          <PlannerTab />
+          <PlannerTabV3 />
         </div>
 
         {/* Analysis panel */}

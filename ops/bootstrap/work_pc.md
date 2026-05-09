@@ -1,10 +1,13 @@
 # Bootstrap — Рабочий ПК (DA / research-скрипты)
 
 > Цель: self-service настройка среды для публикации аналитики из Greenplum в Firestore.
-> Выполняется через **RDP-сессию с личного ПК** (AnyDesk/RDP → рабочий ПК).
+> Выполняется через **AnyDesk-сессию с личного ПК** (RDP заблокирован корпоративным GPO).
 > Claude Code на рабочем ПК НЕ используется — всё делается вручную по этому документу.
-> Логи копируются через буфер обмена RDP в PM-чат.
+> Логи копируются через буфер обмена AnyDesk в PM-чат.
 > Время: ~30 минут после прохождения диагностики.
+>
+> **Текущий статус (2026-05-09):** Шаги 1–4 выполнены на HQ3381. Осталось: шаги 5–6.
+> Путь репозитория: `C:\Users\60110579\Impact_calculator\`
 
 ---
 
@@ -64,21 +67,9 @@ mkdir research\_outbox
 
 ---
 
-## Шаг 3 — Создать Python venv
+## Шаг 3 — Установить зависимости
 
-```
-python -m venv research\.venv
-research\.venv\Scripts\activate
-python --version
-```
-
-**Ожидание:** `(research\.venv)` появился в приглашении командной строки, Python 3.9+.
-
----
-
-## Шаг 4 — Установить зависимости
-
-### Path A (pip работает, PyPI открыт)
+### Path A (PyPI открыт) — стандартный
 
 ```
 pip install psycopg2-binary firebase-admin pandas python-dotenv
@@ -87,20 +78,19 @@ pip list | findstr /i "psycopg2 firebase pandas dotenv"
 
 **Ожидание:** все 4 пакета показаны в списке.
 
+> **Примечание:** на HQ3381 пакеты установлены глобально (без venv) — это допустимо,
+> т.к. рабочий ПК используется только для DA research-скриптов.
+> Если нужна изоляция: `python -m venv research\.venv && research\.venv\Scripts\activate`
+> перед pip install.
+
 ### Path B (PyPI заблокирован)
 
-Вариант 4b-1: если есть conda (Anaconda/Miniconda):
+Вариант: перенести wheel-файлы с личного ПК:
 ```
-conda install -c conda-forge psycopg2 pandas
-pip install firebase-admin python-dotenv
-```
-
-Вариант 4b-2: перенести wheel-файлы с личного ПК:
-```
-# На личном ПК (в git bash или cmd):
+# На личном ПК:
 pip download psycopg2-binary firebase-admin pandas python-dotenv -d C:\temp\wheels
 
-# Скопировать C:\temp\wheels\ на рабочий ПК (USB, shared drive)
+# Скопировать C:\temp\wheels\ на рабочий ПК (USB или общая папка)
 # На рабочем ПК:
 pip install --no-index --find-links=C:\temp\wheels psycopg2-binary firebase-admin pandas python-dotenv
 ```

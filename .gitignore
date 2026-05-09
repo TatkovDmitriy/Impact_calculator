@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env.example и .env.*.example можно коммитить
 .env*
+!.env.example
+!.env.*.example
 
 # vercel
 .vercel
@@ -39,3 +41,31 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets (belt + suspenders)
+*.key
+*firebase-admin*.json
+*service-account*.json
+*-private-key.json
+
+# research — скрипты трекаются, секреты и артефакты нет
+/research/.env
+/research/output/
+/research/notebooks/
+
+# ops/_outbox — Path B fallback: JSON data files коммитятся (без секретов)
+# .gitkeep коммитится, *.json тоже (они содержат только аналитику)
+# Исключений не нужно — ops/ целиком трекается
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# test artifacts
+/test-results/
+/tests/e2e/report/
+
+# OS
+Thumbs.db

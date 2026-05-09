@@ -20,39 +20,39 @@ $fbExit = 0
 
 Write-Host ""
 Write-Host "Impact Calculator — Infrastructure Health Check"
-Write-Host ("─" * 52)
+Write-Host ("-" * 52)
 
-# ── VPN ──────────────────────────────────────────────────────────────────────
+# VPN
 Push-Location $repoRoot
 & powershell -File "ops\health_checks\check_vpn.ps1"
 $vpnExit = $LASTEXITCODE
 Pop-Location
 
-# ── Greenplum ─────────────────────────────────────────────────────────────────
+# Greenplum
 Push-Location $repoRoot
 & $PythonExe "ops\health_checks\check_gp.py"
 $gpExit = $LASTEXITCODE
 Pop-Location
 
-# ── Firebase ──────────────────────────────────────────────────────────────────
+# Firebase
 Push-Location $repoRoot
 & $PythonExe "ops\health_checks\check_firebase.py"
 $fbExit = $LASTEXITCODE
 Pop-Location
 
-# ── Summary ───────────────────────────────────────────────────────────────────
-Write-Host ("─" * 52)
+# Summary
+Write-Host ("-" * 52)
 
 $overallExit = 0
 
 if ($vpnExit -eq 1 -or $gpExit -eq 1 -or $fbExit -eq 1) {
     $overallExit = 1
-    Write-Host "❌  CRITICAL issues found. Fix before starting DA session." -ForegroundColor Red
+    Write-Host "[CRITICAL] Issues found. Fix before starting DA session." -ForegroundColor Red
 } elseif ($vpnExit -eq 2 -or $gpExit -eq 2 -or $fbExit -eq 2) {
     $overallExit = 2
-    Write-Host "⚠️   Warnings present. Proceed with caution." -ForegroundColor Yellow
+    Write-Host "[WARNING]  Warnings present. Proceed with caution." -ForegroundColor Yellow
 } else {
-    Write-Host "✅  All systems operational. Safe to start DA session." -ForegroundColor Green
+    Write-Host "[OK]  All systems operational. Safe to start DA session." -ForegroundColor Green
 }
 
 Write-Host ""

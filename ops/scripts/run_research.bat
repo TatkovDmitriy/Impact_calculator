@@ -38,10 +38,14 @@ if "%SLUG%"=="" (
     exit /b 1
 )
 
-:: Проверить что скрипт существует
-set SCRIPT=research\scripts\%SLUG%\publish.py
+:: Проверить что скрипт существует (поддерживаем run.py и publish.py)
+set SCRIPT=research\scripts\%SLUG%\run.py
 if not exist %SCRIPT% (
-    echo ERROR: script not found: %SCRIPT%
+    set SCRIPT=research\scripts\%SLUG%\publish.py
+)
+if not exist %SCRIPT% (
+    echo ERROR: script not found in research\scripts\%SLUG%\
+    echo Expected: run.py or publish.py
     echo DA-agent must create it first.
     pause
     exit /b 1

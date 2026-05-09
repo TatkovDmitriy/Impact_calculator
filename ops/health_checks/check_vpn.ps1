@@ -1,12 +1,8 @@
-# check_vpn.ps1 — проверка VPN-соединения
-# Метод: ping GP_HOST (только через VPN доступен корп-сеть)
-# Exit 0 = connected, Exit 1 = disconnected / недостижим
+# check_vpn.ps1 - VPN check via TCP to GP_HOST:GP_PORT
+# Exit 0 = connected, Exit 1 = disconnected, Exit 2 = warning
 
-param(
-    [string]$EnvFile = "research\.env"
-)
+param([string]$EnvFile = "research\.env")
 
-# Загрузить GP_HOST из .env файла
 $gpHost = $null
 if (Test-Path $EnvFile) {
     Get-Content $EnvFile | ForEach-Object {
@@ -17,34 +13,31 @@ if (Test-Path $EnvFile) {
 }
 
 if (-not $gpHost) {
-    Write-Host "[VPN] ⚠️  WARNING: GP_HOST not set in $EnvFile — cannot verify VPN"
+    Write-Host "[VPN]      WARN  GP_HOST not set in $EnvFile"
     exit 2
 }
 
-# Попытка TCP-соединения на порт 5432 (Greenplum)
 $gpPort = 5432
 if (Test-Path $EnvFile) {
     Get-Content $EnvFile | ForEach-Object {
-        if ($_ -match '^\s*GP_PORT\s*=\s*(\d+)\s*$') {
-            $gpPort = [int]$Matches[1]
-        }
+        if ($_ -match '^\s*GP_PORT\s*=\s*(\d+)\s*$') { $gpPort = [int]$Matches[1] }
     }
 }
 
 try {
     $tcp = New-Object System.Net.Sockets.TcpClient
     $async = $tcp.BeginConnect($gpHost, $gpPort, $null, $null)
-    $wait = $async.AsyncWaitHandle.WaitOne(3000, $false)   # 3 сек таймаут
+    $wait = $async.AsyncWaitHandle.WaitOne(3000, $false)
     if ($wait -and $tcp.Connected) {
         $tcp.Close()
-        Write-Host "[VPN]      ✅  CONNECTED  ($gpHost`:$gpPort reachable)"
+        Write-Host "[VPN]      OK    CONNECTED  ($gpHost`:$gpPort reachable)"
         exit 0
     } else {
         $tcp.Close()
-        Write-Host "[VPN]      ❌  DISCONNECTED  ($gpHost`:$gpPort unreachable — VPN off?)"
+        Write-Host "[VPN]      FAIL  DISCONNECTED  ($gpHost`:$gpPort unreachable)"
         exit 1
     }
 } catch {
-    Write-Host "[VPN]      ❌  ERROR  $_"
+    Write-Host "[VPN]      FAIL  ERROR  $_"
     exit 1
 }

@@ -17,7 +17,7 @@ load_dotenv(_ENV_PATH)
 
 log = logging.getLogger(__name__)
 
-_OUTBOX = Path(__file__).parent.parent / "_outbox"
+_OUTBOX = Path(__file__).parent.parent.parent / "ops" / "_outbox"
 
 
 class FbPublisher:

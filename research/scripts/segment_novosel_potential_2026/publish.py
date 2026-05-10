@@ -49,10 +49,9 @@ def main() -> None:
 
     params = {'date_from': DATE_FROM, 'date_to': DATE_TO}
 
-    # разбиваем на два именованных запроса по маркеру
-    queries = [q.strip() for q in sql_text.split(';') if q.strip()]
+    # разбиваем на два запроса и убираем ведущие комментарии
+    queries = [_strip_comments(q) for q in sql_text.split(';') if _strip_comments(q)]
 
-    # первые два SELECT — проникновение и AOV (остальное — комментарии)
     penetration_sql = queries[0]
     aov_sql         = queries[1]
 
@@ -107,6 +106,15 @@ def _sanity(payload: dict, df_p, df_a) -> None:
     log.info('[sanity] Сделок: %d', total_deals)
 
     log.info('[sanity] Все проверки пройдены')
+
+
+def _strip_comments(sql: str) -> str:
+    """Убирает ведущие строки-комментарии, чтобы SQL начинался с SELECT/WITH."""
+    lines = sql.strip().splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() and not line.strip().startswith('--'):
+            return '\n'.join(lines[i:]).strip()
+    return ''
 
 
 if __name__ == '__main__':

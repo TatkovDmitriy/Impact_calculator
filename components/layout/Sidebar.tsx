@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calculator, BookOpen, Activity } from 'lucide-react';
+import { LayoutDashboard, Calculator, BookOpen, FlaskConical, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/calculators', label: 'Калькуляторы', icon: Calculator },
   { href: '/scenarios', label: 'Сценарии', icon: BookOpen },
+  { href: '/research', label: 'Исследования', icon: FlaskConical },
   { href: '/dev-check', label: 'Dev Check', icon: Activity, devOnly: true },
 ] as const;
 

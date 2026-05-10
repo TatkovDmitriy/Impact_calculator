@@ -65,7 +65,7 @@ interface KpiItem {
 
 ## Источник оригинальных исследований
 
-**Локация:** `D:\Analyses\Pyton` (рабочий ПК, hand-curated коллекция)
+**Локация:** `D:\Analyses\Pyton` (корпоративный ПК, hand-curated коллекция)
 
 Содержит:
 - **27 .ipynb файлов** — Jupyter ноутбуки с готовыми SQL-запросами и pandas-обработкой по корп-данным ЛП
@@ -81,16 +81,6 @@ interface KpiItem {
 5. Добавляет publish-логику → `research/scripts/<slug>/publish.py`
 6. Запускает, проверяет, push в Firestore
 
-### Pilot candidates (приоритет для первого исследования)
-
-| Notebook | Почему важно для pilot |
-|---|---|
-| **Анализ клиентов Новосел.ipynb** | Прямо расширяет существующий Novosel-калькулятор, максимальная синергия |
-| **Анализ клиентов Новосел 09.02.ipynb** | Свежая версия того же исследования, можно сравнить |
-| Retention сделок (1).ipynb | Классика — cohort retention, kpi/line_chart payload |
-| Анализ лидов 2025.ipynb | Свежие данные по воронке |
-| Анализ отмененных сделок.ipynb | Loss-analysis, важно для разговора с CPO |
-
 ⚠️ Критично: оригиналы в `D:\Analyses\Pyton` НЕ редактируются. Любые правки делаются в копии в `research/notebooks/`.
 
 ## Конвенции для DA-агента
@@ -98,7 +88,6 @@ interface KpiItem {
 ### Slug
 - snake_case, латиница, без цифр в начале
 - Префикс по теме: `metrics_*`, `cohort_*`, `funnel_*`, `segment_*`
-- Пример: `cohort_novosel_retention_q1_2026`
 
 ### Versioning
 - Семвер в `meta.scriptVersion`. minor bump = изменилась формула, major = breaking schema

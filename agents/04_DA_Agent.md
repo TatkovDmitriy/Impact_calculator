@@ -159,13 +159,18 @@ Firestore (collection research_items). Документация: agents/04_DA_Ag
     ├ query.sql                          cd research
     ├ analyze.py                         python scripts/<slug>/publish.py
     ├ publish.py                         ↓
-    ├ description.md                     Скрипт пушит в Firestore
-    └ test_synthetic.py                  ИЛИ (если FB заблокирован)
-  pytest test_synthetic.py    ────▶     save → research/_outbox/<slug>.json
-  git commit + push                      ↓
-                              ◀────     ops/scripts/upload_outbox.py
+    ├ description.md          Path A:    Firestore (прямой push, если VPN есть)
+    └ test_synthetic.py
+  pytest test_synthetic.py    Path B:    publish.py → ops/_outbox/<slug>.json
+  git commit + push           ────▶     git add ops/_outbox/ && git push
+                                         ↓
+                                         GitHub Actions (upload_outbox.yml)
                                          ↓
                                          Firestore research_items/<slug>
+                                         (outbox автоматически очищается)
+
+  Path B — стандартный маршрут (Firebase закрыт корп. сетью).
+  Личный ПК не нужен: GitHub Actions читает секреты из репозитория.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ТВОЯ ЗОНА
@@ -331,6 +336,7 @@ def test_empty_input():
     payload = compute_payload(df)  # не должно упасть
 ```
 
-### Path B (FB-fallback)
-`fb_publisher.publish()` ловит network error → `_outbox/<slug>.json` → `ops/scripts/upload_outbox.py`.
-Используется только если Firebase заблокирован корп файрволом (diagnostic от DevOps).
+### Path B (стандартный outbox-маршрут)
+`fb_publisher.publish()` ловит network error → сохраняет `ops/_outbox/<slug>.json` → DA делает `git commit + push` → GitHub Actions `upload_outbox.yml` автоматически загружает в Firestore и очищает outbox.
+
+Это **основной маршрут** для корп ПК (Firebase закрыт корп. сетью). Личный ПК не нужен.

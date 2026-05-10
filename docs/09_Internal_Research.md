@@ -4,7 +4,7 @@
 
 Вкладка «Исследования» — витрина аналитики, основанной на данных Greenplum (корпоративная БД ЛП).
 DA-агент публикует результаты через Firebase Admin SDK в collection `research_items`.
-Данные read-only для web-app, write — только с корпоративного ПК через Python-скрипт.
+Данные read-only для web-app, write — только через DA-агент (корп ПК → `ops/_outbox/` → GitHub Actions → Firestore).
 
 ## Доступ
 
@@ -40,11 +40,11 @@ interface ResearchMeta {
 
 | kind | Описание | Рендерер |
 |---|---|---|
-| `kpi` | 2–6 числовых карточек | ✅ реализован |
-| `table` | Таблица с колонками | ⏳ Phase R3+ |
-| `line_chart` | Линейный тренд | ⏳ Phase R3+ |
-| `bar_chart` | Столбчатая диаграмма | ⏳ Phase R3+ |
-| `composite` | Несколько блоков | ⏳ Phase R3+ |
+| `kpi` | 2–6 числовых карточек | ✅ реализован (Phase R2) |
+| `table` | Таблица с колонками | ✅ реализован (Phase R3) |
+| `line_chart` | Линейный тренд | ✅ реализован (Phase R3) |
+| `bar_chart` | Столбчатая диаграмма | ✅ реализован (Phase R3) |
+| `composite` | Несколько блоков (любые kind) | ✅ реализован (Phase R3) |
 
 ### KpiPayload (реализован в Phase R2)
 
@@ -111,16 +111,28 @@ lib/research/
   firestore.ts          getResearchItems() — читает из Firestore
 
 app/(app)/research/
-  page.tsx              страница /research
+  page.tsx              страница /research (фильтры, счётчик, пустой стейт)
   components/
-    ResearchCard.tsx    карточка исследования (switch по kind)
-    KpiRenderer.tsx     рендерер kind='kpi'
-    MarkdownDescription.tsx  react-markdown обёртка
+    ResearchCard.tsx        карточка исследования
+    PayloadRenderer.tsx     switch по kind → нужный рендерер
+    KpiRenderer.tsx         kind='kpi'
+    TableRenderer.tsx       kind='table'
+    LineChartRenderer.tsx   kind='line_chart' (Recharts, бренд-цвета)
+    BarChartRenderer.tsx    kind='bar_chart' (Recharts, поддержка stacked)
+    MarkdownDescription.tsx react-markdown + remark-gfm
 ```
 
-## Обновление Security Rules
+## Публикация данных (DA workflow)
 
-После добавления блока `research_items` в Security Rules (Phase R2):
+DA-агент кладёт JSON в `ops/_outbox/<slug>.json` и пушит в main.
+GitHub Actions (`.github/workflows/upload_outbox.yml`) запускается автоматически:
+запускает `ops/scripts/upload_outbox.py` с Firebase-секретами → пишет в Firestore → удаляет файл из outbox.
+
+Личный ПК не нужен. Все Firebase-секреты хранятся в GitHub Actions Secrets (`FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_ADMIN_PRIVATE_KEY`).
+
+## Firestore Security Rules
+
+Актуальные правила для `research_items` (применены в Firebase Console):
 
 ```javascript
 match /research_items/{slug} {
@@ -128,5 +140,3 @@ match /research_items/{slug} {
   allow write: if false;
 }
 ```
-
-Применить в Firebase Console → Firestore → Rules → Publish.

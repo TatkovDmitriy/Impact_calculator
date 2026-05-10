@@ -4,19 +4,16 @@
 
 ## Статус
 
-Phase R2 завершена: инфраструктура готова (schema, Security Rules, UI).
-Первый research-item появится в Phase R3 (DA-агент).
+Phase R3 завершена: первое исследование опубликовано (2026-05-10).
+Инфраструктура: schema, Security Rules, UI, GitHub Actions outbox-pipeline — готовы.
 
 ## Опубликованные исследования
-
-_Пока нет опубликованных исследований._
-
----
 
 <!-- DA-агент добавляет строку в таблицу при каждом RESEARCH PUBLISHED handoff -->
 
 | Slug | Название | Category | Kind | Версия | Обновлено |
 |---|---|---|---|---|---|
+| segment_novosel_potential_2026 | Потенциал программы «Новоселы» 2026 | segments | composite | 1.0.0 | 2026-05-10 |
 
 ## Source notebooks (inventory)
 

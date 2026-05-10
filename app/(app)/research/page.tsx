@@ -2,14 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { FlaskConical } from 'lucide-react';
-import type { ResearchItem } from '@/lib/research/types';
+import type { ResearchItem, ResearchCategory } from '@/lib/research/types';
 import { getResearchItems } from '@/lib/research/firestore';
 import { ResearchCard } from './components/ResearchCard';
+import { cn } from '@/lib/utils';
+
+type FilterValue = ResearchCategory | 'all';
+
+const FILTER_TABS: { value: FilterValue; label: string }[] = [
+  { value: 'all', label: 'Все' },
+  { value: 'metrics', label: 'Метрики' },
+  { value: 'cohorts', label: 'Когорты' },
+  { value: 'segments', label: 'Сегменты' },
+  { value: 'funnels', label: 'Воронки' },
+  { value: 'other', label: 'Прочее' },
+];
 
 export default function ResearchPage() {
   const [items, setItems] = useState<ResearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<FilterValue>('all');
 
   useEffect(() => {
     getResearchItems()
@@ -17,6 +30,9 @@ export default function ResearchPage() {
       .catch((e) => setError(e instanceof Error ? e.message : 'Ошибка загрузки'))
       .finally(() => setLoading(false));
   }, []);
+
+  const filtered =
+    activeCategory === 'all' ? items : items.filter((item) => item.category === activeCategory);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -52,11 +68,35 @@ export default function ResearchPage() {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <div className="flex flex-col gap-5">
-          {items.map((item) => (
-            <ResearchCard key={item.slug} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1.5">
+              {FILTER_TABS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setActiveCategory(value)}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-sm font-medium transition-colors',
+                    activeCategory === value
+                      ? 'bg-lp-yellow/20 text-lp-dark'
+                      : 'bg-lp-muted text-lp-text-muted hover:bg-lp-yellow/10 hover:text-lp-dark'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="shrink-0 text-sm text-lp-text-muted">
+              {filtered.length} {filtered.length === 1 ? 'исследование' : filtered.length >= 2 && filtered.length <= 4 ? 'исследования' : 'исследований'}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {filtered.map((item) => (
+              <ResearchCard key={item.slug} item={item} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

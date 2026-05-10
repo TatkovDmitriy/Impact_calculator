@@ -1,5 +1,5 @@
-import type { ResearchItem, ResearchPayload } from '@/lib/research/types';
-import { KpiRenderer } from './KpiRenderer';
+import type { ResearchItem } from '@/lib/research/types';
+import { PayloadRenderer } from './PayloadRenderer';
 import { MarkdownDescription } from './MarkdownDescription';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -20,15 +20,6 @@ function relativeTime(ms: number): string {
   if (hours < 24) return `${hours} ч назад`;
   if (days < 30) return `${days} дн назад`;
   return new Date(ms).toLocaleDateString('ru-RU');
-}
-
-function PayloadRenderer({ payload }: { payload: ResearchPayload }) {
-  if (payload.kind === 'kpi') return <KpiRenderer payload={payload} />;
-  return (
-    <div className="rounded-md border border-dashed border-lp-border px-4 py-3 text-sm text-lp-text-muted">
-      Рендерер не реализован: {payload.kind}
-    </div>
-  );
 }
 
 interface Props {

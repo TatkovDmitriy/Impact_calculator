@@ -47,7 +47,8 @@ def main() -> None:
     sql_text = load_sql('query.sql')
     source_hash = hashlib.sha256(sql_text.encode()).hexdigest()
 
-    params = {'date_from': DATE_FROM, 'date_to': DATE_TO}
+    # позиционные параметры: (date_from, date_to) — два %s в каждом запросе
+    params = (DATE_FROM, DATE_TO)
 
     # разбиваем на два запроса и убираем ведущие комментарии
     queries = [_strip_comments(q) for q in sql_text.split(';') if _strip_comments(q)]

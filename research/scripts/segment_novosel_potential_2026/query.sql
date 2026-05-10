@@ -27,13 +27,13 @@ LEFT JOIN customer_mdm_tags_ods.v_client_tags t
     ON  d.customer_systemid = t.client_number
     AND t.tag_catalog_id    = '1'
     AND t.is_actual         = '1'
-WHERE d.createddate >= %(date_from)s
-  AND d.createddate <  %(date_to)s
+WHERE d.createddate >= %s
+  AND d.createddate <  %s
   AND (
-      LOWER(d.deal_type) LIKE '%kitchen%'
-   OR LOWER(d.deal_type) LIKE '%bathroom%'
-   OR LOWER(d.deal_type) LIKE '%storage%'
-   OR LOWER(d.deal_type) LIKE '%interior_door%'
+      LOWER(d.deal_type) LIKE '%%kitchen%%'
+   OR LOWER(d.deal_type) LIKE '%%bathroom%%'
+   OR LOWER(d.deal_type) LIKE '%%storage%%'
+   OR LOWER(d.deal_type) LIKE '%%interior_door%%'
   )
 GROUP BY 1, 2
 ORDER BY 1, 2;
@@ -62,14 +62,14 @@ LEFT JOIN customer_mdm_tags_ods.v_client_tags t
     ON  d.customer_systemid = t.client_number
     AND t.tag_catalog_id    = '1'
     AND t.is_actual         = '1'
-WHERE d.createddate >= %(date_from)s
-  AND d.createddate <  %(date_to)s
+WHERE d.createddate >= %s
+  AND d.createddate <  %s
   AND d.turnover_full > 0
   AND (
-      LOWER(d.deal_type) LIKE '%kitchen%'
-   OR LOWER(d.deal_type) LIKE '%bathroom%'
-   OR LOWER(d.deal_type) LIKE '%storage%'
-   OR LOWER(d.deal_type) LIKE '%interior_door%'
+      LOWER(d.deal_type) LIKE '%%kitchen%%'
+   OR LOWER(d.deal_type) LIKE '%%bathroom%%'
+   OR LOWER(d.deal_type) LIKE '%%storage%%'
+   OR LOWER(d.deal_type) LIKE '%%interior_door%%'
   )
 GROUP BY 1, 2
 ORDER BY 1, 2;

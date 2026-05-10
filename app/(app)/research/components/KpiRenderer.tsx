@@ -40,7 +40,7 @@ export function KpiRenderer({ payload }: Props) {
               <span
                 className={cn(
                   'text-xs font-medium',
-                  positive && 'text-green-600',
+                  positive && 'text-lp-dark',
                   negative && 'text-red-500',
                   !positive && !negative && 'text-lp-text-muted'
                 )}

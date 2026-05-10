@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Дашборд' },
   { href: '/calculators', label: 'Калькуляторы' },
   { href: '/scenarios', label: 'Сценарии' },
+  { href: '/research', label: 'Исследования' },
 ] as const;
 
 export function Navbar() {

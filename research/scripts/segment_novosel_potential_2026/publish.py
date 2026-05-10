@@ -47,21 +47,23 @@ def main() -> None:
     sql_text = load_sql('query.sql')
     source_hash = hashlib.sha256(sql_text.encode()).hexdigest()
 
-    # позиционные параметры: (date_from, date_to) — два %s в каждом запросе
-    params = (DATE_FROM, DATE_TO)
+    # форматируем даты прямо в SQL — безопасно, т.к. значения из кода, не от пользователя
+    date_from_str = DATE_FROM.strftime('%Y-%m-%d')
+    date_to_str   = DATE_TO.strftime('%Y-%m-%d')
+    sql_filled = sql_text.format(date_from=date_from_str, date_to=date_to_str)
 
     # разбиваем на два запроса и убираем ведущие комментарии
-    queries = [_strip_comments(q) for q in sql_text.split(';') if _strip_comments(q)]
+    queries = [_strip_comments(q) for q in sql_filled.split(';') if _strip_comments(q)]
 
     penetration_sql = queries[0]
     aov_sql         = queries[1]
 
     log.info('Выгружаю проникновение...')
-    df_p = query_df(penetration_sql, params)
+    df_p = query_df(penetration_sql)
     log.info('Проникновение: %d строк', len(df_p))
 
     log.info('Выгружаю AOV...')
-    df_a = query_df(aov_sql, params)
+    df_a = query_df(aov_sql)
     log.info('AOV: %d строк', len(df_a))
 
     row_count = len(df_p) + len(df_a)

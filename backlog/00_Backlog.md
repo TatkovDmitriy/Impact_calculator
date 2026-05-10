@@ -25,7 +25,15 @@
 - Slug: `novosel-loyalty-impact`
 - Спека: [docs/calculators/C-09_novosel_loyalty.md](../docs/calculators/C-09_novosel_loyalty.md)
 - RICE: Reach=10, Impact=3, Conf=1.0, Effort=2н → **RICE=15** (effort выше из-за 3 сценариев + ECharts)
-- Статус: [ ] ТЗ DEV → [ ] DEV → [ ] QA → [ ] Prod
+- Статус: ✅ **PROD** (2026-05)
+
+#### Research-раздел — Phase R3 (Исследования)
+
+- Slug: `research`
+- RICE: —
+- Статус: ✅ **PROD** (2026-05-10)
+- Что сдано: навигация (Sidebar+Navbar), рендереры (KPI/table/line_chart/bar_chart/composite/markdown), фильтры, счётчик, сортировка, Firestore Security Rules, GitHub Actions DA-pipeline (upload_outbox.yml)
+- Закрытые баги: BUG-01 (react-markdown/remark-gfm), BUG-02 (pluralization), BUG-03 (package-lock.json)
 
 #### Следующие калькуляторы (очередь после C-09)
 
@@ -60,3 +68,4 @@
 
 ## История
 - **2026-05-07** — Бэклог создан. PM-черновик RICE.
+- **2026-05-10** — Phase R3 APPROVED. Research-раздел в production. Следующий приоритет: C-01 revenue-uplift (RICE=30).

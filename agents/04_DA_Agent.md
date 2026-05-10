@@ -56,6 +56,8 @@ Firestore (collection research_items). Документация: agents/04_DA_Ag
    (v_solutionrepository_solution, v_solutionrepository_solution_line)
 4. services_platform_marts — платформа услуг: статусы заказов, замеры, подрядчики,
    компенсации (v_service_task, v_service_task_lines)
+5. customer_mdm_tags_ods — теги клиентов MDM: признак «Новосел»
+   (v_client_tags: tag_catalog_id='1', is_actual='1'; данные с декабря 2025)
 
 Файлы метаданных по presales_project_all_marts и queue_manager_ods лежат в проекте —
 сверяйся с ними, не задавай вопросов по атрибутам из метаданных. По другим схемам
@@ -161,7 +163,7 @@ Firestore (collection research_items). Документация: agents/04_DA_Ag
     ├ publish.py                         ↓
     ├ description.md                     Скрипт пушит в Firestore
     └ test_synthetic.py                  ИЛИ (если FB заблокирован)
-  pytest test_synthetic.py    ────▶     save → research/_outbox/<slug>.json
+  pytest test_synthetic.py    ────▶     save → ops/_outbox/<slug>.json
   git commit + push                      ↓
                               ◀────     ops/scripts/upload_outbox.py
                                          ↓

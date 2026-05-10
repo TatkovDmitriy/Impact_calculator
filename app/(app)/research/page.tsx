@@ -9,6 +9,14 @@ import { cn } from '@/lib/utils';
 
 type FilterValue = ResearchCategory | 'all';
 
+function pluralResearch(n: number): string {
+  const m100 = n % 100, m10 = n % 10;
+  if (m100 >= 11 && m100 <= 19) return 'исследований';
+  if (m10 === 1) return 'исследование';
+  if (m10 >= 2 && m10 <= 4) return 'исследования';
+  return 'исследований';
+}
+
 const FILTER_TABS: { value: FilterValue; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'metrics', label: 'Метрики' },
@@ -87,7 +95,7 @@ export default function ResearchPage() {
               ))}
             </div>
             <span className="shrink-0 text-sm text-lp-text-muted">
-              {filtered.length} {filtered.length === 1 ? 'исследование' : filtered.length >= 2 && filtered.length <= 4 ? 'исследования' : 'исследований'}
+              {filtered.length} {pluralResearch(filtered.length)}
             </span>
           </div>
 

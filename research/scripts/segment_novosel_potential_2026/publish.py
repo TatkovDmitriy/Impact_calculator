@@ -15,7 +15,7 @@ from pathlib import Path
 # добавляем research/ в path для импорта shared-модулей
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.gp_client import GpClient
+from shared.gp_client import query_df
 from shared.fb_publisher import FbPublisher
 from analyze import compute_payload
 
@@ -56,14 +56,13 @@ def main() -> None:
     penetration_sql = queries[0]
     aov_sql         = queries[1]
 
-    with GpClient() as gp:
-        log.info('Выгружаю проникновение...')
-        df_p = gp.query(penetration_sql, params)
-        log.info('Проникновение: %d строк', len(df_p))
+    log.info('Выгружаю проникновение...')
+    df_p = query_df(penetration_sql, params)
+    log.info('Проникновение: %d строк', len(df_p))
 
-        log.info('Выгружаю AOV...')
-        df_a = gp.query(aov_sql, params)
-        log.info('AOV: %d строк', len(df_a))
+    log.info('Выгружаю AOV...')
+    df_a = query_df(aov_sql, params)
+    log.info('AOV: %d строк', len(df_a))
 
     row_count = len(df_p) + len(df_a)
     log.info('rowCount итого: %d', row_count)

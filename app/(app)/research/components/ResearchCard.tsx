@@ -9,6 +9,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Прочее',
 };
 
+function getRefreshedMs(ts: unknown): number {
+  if (!ts) return 0;
+  if (typeof ts === 'string') return new Date(ts).getTime();
+  if (typeof (ts as { toMillis?: () => number }).toMillis === 'function') {
+    return (ts as { toMillis: () => number }).toMillis();
+  }
+  return 0;
+}
+
 function relativeTime(ms: number): string {
   const diff = Date.now() - ms;
   const minutes = Math.floor(diff / 60_000);
@@ -21,12 +30,23 @@ function relativeTime(ms: number): string {
   return new Date(ms).toLocaleDateString('ru-RU');
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+    .replace(/\n+/g, ' ')
+    .trim();
+}
+
 interface Props {
   item: ResearchItem;
 }
 
 export function ResearchCard({ item }: Props) {
-  const refreshedMs = item.meta.lastRefreshedAt?.toMillis?.() ?? 0;
+  const refreshedMs = getRefreshedMs(item.meta.lastRefreshedAt);
 
   return (
     <Link href={`/research/${item.slug}`} className="group block">
@@ -38,7 +58,9 @@ export function ResearchCard({ item }: Props) {
             </span>
             <h2 className="text-base font-semibold text-lp-dark">{item.title}</h2>
             {item.description && (
-              <p className="mt-1 line-clamp-2 text-sm text-lp-text-muted">{item.description}</p>
+              <p className="mt-1 line-clamp-2 text-sm text-lp-text-muted">
+                {stripMarkdown(item.description)}
+              </p>
             )}
           </div>
           <span className="shrink-0 text-xs text-lp-text-muted">v{item.meta.scriptVersion}</span>

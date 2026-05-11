@@ -18,6 +18,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Прочее',
 };
 
+function getRefreshedMs(ts: unknown): number {
+  if (!ts) return 0;
+  if (typeof ts === 'string') return new Date(ts).getTime();
+  if (typeof (ts as { toMillis?: () => number }).toMillis === 'function') {
+    return (ts as { toMillis: () => number }).toMillis();
+  }
+  return 0;
+}
+
 function relativeTime(ms: number): string {
   const diff = Date.now() - ms;
   const minutes = Math.floor(diff / 60_000);
@@ -55,7 +64,7 @@ export default function ResearchDetailPage() {
 
   if (!item) return null;
 
-  const refreshedMs = item.meta.lastRefreshedAt?.toMillis?.() ?? 0;
+  const refreshedMs = getRefreshedMs(item.meta.lastRefreshedAt);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

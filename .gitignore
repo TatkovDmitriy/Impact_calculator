@@ -47,6 +47,8 @@ next-env.d.ts
 *firebase-admin*.json
 *service-account*.json
 *-private-key.json
+password.json
+**/password.json
 
 # research — скрипты трекаются, секреты и артефакты нет
 /research/.env

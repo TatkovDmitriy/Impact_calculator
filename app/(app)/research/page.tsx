@@ -42,6 +42,11 @@ export default function ResearchPage() {
   const filtered =
     activeCategory === 'all' ? items : items.filter((item) => item.category === activeCategory);
 
+  const availableCategories = new Set(items.map((i) => i.category));
+  const visibleTabs = FILTER_TABS.filter(
+    (t) => t.value === 'all' || availableCategories.has(t.value as ResearchCategory)
+  );
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -79,7 +84,7 @@ export default function ResearchPage() {
         <>
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-wrap gap-1.5">
-              {FILTER_TABS.map(({ value, label }) => (
+              {visibleTabs.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setActiveCategory(value)}

@@ -24,5 +24,6 @@ export const config = {
     '/calculators/:path*',
     '/scenarios/:path*',
     '/dev-check/:path*',
+    '/research/:path*',
   ],
 };
